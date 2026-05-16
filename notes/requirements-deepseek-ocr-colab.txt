@@ -1,5 +1,5 @@
-# Зависимости для notes/statisctics.ipynb (DeepSeek-OCR + метрики).
-# В Colab обычно достаточно первой строки + jiwer; torch часто уже установлен.
+# DeepSeek-OCR: версии как в официальном README модели (HF / deepseek-ai/DeepSeek-OCR).
+# Иначе remote code может падать на импортах вроде LlamaFlashAttention2 при других версиях transformers.
 
 jiwer>=3.0.0
 pandas>=2.0.0
@@ -13,11 +13,8 @@ einops>=0.7.0
 addict>=2.4.0
 easydict>=1.10
 
-# Модель и трансформеры (версии подберите под CUDA в Colab; при конфликте снимите закрепление).
-transformers>=4.45.0
+transformers==4.46.3
+tokenizers==0.20.3
 
-# torch: в Colab ставьте через встроенную среду или:
-# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-
-# Опционально (ускорение на подходящих GPU; без пакета ноутбук переключится на sdpa):
-# flash-attn --no-build-isolation
+# Официально: torch==2.6.0 — в Colab обычно уже есть CUDA-сборка; при конфликтах см. README PyTorch.
+# flash-attn==2.7.3 — опционально, pip install --no-build-isolation (сборка может занять много времени).
