@@ -1,0 +1,8 @@
+# Зависимости для scripts/responses_api_analyze/run_ocr_api_benchmark.py
+
+boto3>=1.28.0
+requests>=2.28.0
+jiwer>=3.0.0
+Pillow>=10.0.0
+google-auth>=2.23.0
+google-auth-oauthlib>=1.2.0

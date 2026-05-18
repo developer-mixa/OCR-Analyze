@@ -1,0 +1,15 @@
+{
+  "aspose_ocr": {
+    "Model": "aspose_ocr_cloud:v5",
+    "Final Score": null,
+    "Accuracy": null,
+    "CER": null,
+    "Unit Test Rate": null,
+    "Внутренний парсер": "none",
+    "Токены": {
+      "note": "нет эталонов — CER не считался"
+    },
+    "Доп. Комментарии": "providers_script=api_benchmark; n_files=4; n_with_cer=0",
+    "Скорость": null
+  }
+}

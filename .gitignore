@@ -1,0 +1,5 @@
+.env
+secret.json
+client_secret*.json
+*apps.googleusercontent.com.json
+google_vision_oauth_token.json
