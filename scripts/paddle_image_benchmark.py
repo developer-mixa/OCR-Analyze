@@ -126,6 +126,10 @@ def run_paddle_ocr(
 ) -> tuple[str | None, str]:
     """
     Возвращает (ошибка или None, текст гипотезы).
+
+    PaddleOCR **3.x** не принимает ``use_gpu``; при явном выборе CPU/GPU передаётся
+    аргумент ``device`` (``gpu:0`` / ``cpu``). Если библиотека не знает ``device`` —
+    повтор без него.
     """
     try:
         from paddleocr import PaddleOCR  # type: ignore[import-untyped]
@@ -139,26 +143,37 @@ def run_paddle_ocr(
     }
     if ocr_version:
         kwargs["ocr_version"] = ocr_version
-    if use_gpu is not None:
-        kwargs["use_gpu"] = use_gpu
+    # 3.x: вместо use_gpu
+    if use_gpu is True:
+        kwargs["device"] = "gpu:0"
+    elif use_gpu is False:
+        kwargs["device"] = "cpu"
 
     ocr = None
     last_err: Exception | None = None
-    for attempt in range(3):
+    for _ in range(6):
         try:
             ocr = PaddleOCR(**kwargs)
             break
-        except TypeError:
+        except TypeError as e:
+            last_err = e
+            if "device" in kwargs:
+                kwargs.pop("device", None)
+                continue
             if "ocr_version" in kwargs:
                 kwargs.pop("ocr_version", None)
                 continue
-            if "use_gpu" in kwargs:
-                kwargs.pop("use_gpu", None)
-                continue
-            return "PaddleOCR init: несовместимые аргументы (lang / ocr_version / use_gpu)", ""
+            return f"PaddleOCR init: {e}", ""
         except Exception as e:
             last_err = e
-            break
+            err_l = str(e).lower()
+            if ("unknown argument" in err_l or "unexpected keyword" in err_l) and "device" in kwargs:
+                kwargs.pop("device", None)
+                continue
+            if ("unknown argument" in err_l or "unexpected keyword" in err_l) and "ocr_version" in kwargs:
+                kwargs.pop("ocr_version", None)
+                continue
+            return f"PaddleOCR init: {e}", ""
     if ocr is None:
         return f"PaddleOCR init: {last_err!s}" if last_err else "PaddleOCR init: неизвестная ошибка", ""
 
@@ -191,7 +206,7 @@ def parse_args() -> argparse.Namespace:
         "--use-gpu",
         default=None,
         action=argparse.BooleanOptionalAction,
-        help="Передать use_gpu в PaddleOCR (по умолчанию: авто — True если CUDA доступна)",
+        help="Предпочтение устройства: в PaddleOCR 3.x передаётся как device=gpu:0/cpu (не use_gpu)",
     )
     p.add_argument(
         "--normalize",
@@ -309,7 +324,7 @@ def main() -> int:
                     "lang_cli": lang_raw,
                     "ocr_version": ocr_ver,
                     "use_angle_cls": use_angle_cls,
-                    "use_gpu": use_gpu,
+                    "use_gpu_preference": use_gpu,
                     "dry_run": args.dry_run,
                 },
                 "had_reference": had_ref,

@@ -176,7 +176,7 @@ python scripts/paddle_image_benchmark.py \
   --dry-run
 ```
 
-Переменные окружения: `PADDLE_INPUT_DIR`, `PADDLE_OUTPUT_DIR`, `PADDLE_OCR_LANG` (по умолчанию в скрипте `ru`), `PADDLE_OCR_VERSION` (часто `PP-OCRv5`), `PADDLE_NORMALIZE`. Флаги `--use-gpu` / `--no-use-gpu` переопределяют автоопределение CUDA. В Colab при отсутствии скрипта в клоне см. **`OCR_ANALYZE_RAW_BASE`** в `notes/paddle_colab.ipynb` (ячейка 3).
+Переменные окружения: `PADDLE_INPUT_DIR`, `PADDLE_OUTPUT_DIR`, `PADDLE_OCR_LANG`, `PADDLE_OCR_VERSION`, `PADDLE_NORMALIZE`. Флаги `--use-gpu` / `--no-use-gpu` в скрипте превращаются в `device=gpu:0` или `cpu` для PaddleOCR 3.x (аргумент `use_gpu` в конструктор не передаётся).
 
 ---
 
