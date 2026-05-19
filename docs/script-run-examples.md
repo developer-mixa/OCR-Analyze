@@ -156,14 +156,15 @@ python scripts/mineru_image_benchmark.py \
 
 **Зависимости:** `pip install jiwer paddlepaddle paddleocr` (GPU: `paddlepaddle-gpu`, см. [установку Paddle](https://www.paddlepaddle.org.cn/install/quick)). Метрики те же, что у MinerU (`responses_api_analyze/metrics.py`). Colab: **`notes/paddle_colab.ipynb`** — шесть ячеек **0–5** по порядку.
 
-Эталоны рядом с PNG — как у MinerU. Скрипт пишет `output/.../hypotheses/paddle/<stem>.txt`, `paddle_runs.jsonl`, `paddle_summaries.json` (ключ верхнего уровня **`paddleocr`**), при успехе — **`paddle_hypotheses_raw.json`**, **`paddle_hypotheses_concat.txt`**, пути в **`paddleocr._outputs`**. В Colab после обновления репозитория нужен актуальный клон с `scripts/paddle_image_benchmark.py` (в ноутбуке ячейка 1 делает `git pull`; при старом shallow clone иногда проще удалить каталог клона и снова ячейку 1). Если `import paddleocr` ругается на `langchain_text_splitters`, поставьте: `pip install langchain-text-splitters`.
+Эталоны рядом с PNG — как у MinerU. Скрипт пишет `output/.../hypotheses/paddle/<stem>.txt`, `paddle_runs.jsonl`, `paddle_summaries.json` (ключ **`paddleocr`**), при успехе — **`paddle_hypotheses_raw.json`**, **`paddle_hypotheses_concat.txt`**, пути в **`paddleocr._outputs`**. В **PaddleOCR 3.x** для русского задавайте **`--lang ru`** и **`--ocr-version PP-OCRv5`** (в таблице PP-OCRv5 нет кода `cyrillic`; в скрипте алиас `cyrillic`→`ru`). В Colab нужен актуальный клон с `scripts/paddle_image_benchmark.py` (ячейка 1 — `git pull`; при старом shallow clone иногда проще удалить каталог клона). Если `import paddleocr` ругается на `langchain_text_splitters`: `pip install langchain-text-splitters`.
 
 ```bash
 pip install jiwer paddlepaddle paddleocr
 python scripts/paddle_image_benchmark.py \
   --input-dir "input/data/1" \
   --output-dir "output/paddle_benchmark" \
-  --lang cyrillic
+  --lang ru \
+  --ocr-version PP-OCRv5
 ```
 
 Пересчёт метрик по уже сохранённым `.txt` (без вызова OCR):
@@ -175,7 +176,7 @@ python scripts/paddle_image_benchmark.py \
   --dry-run
 ```
 
-Переменные окружения: `PADDLE_INPUT_DIR`, `PADDLE_OUTPUT_DIR`, `PADDLE_OCR_LANG`, `PADDLE_NORMALIZE`. Флаги `--use-gpu` / `--no-use-gpu` переопределяют автоопределение CUDA. В Colab, если в git-клоне нет `paddle_image_benchmark.py`, ноутбук может подтянуть файл с Raw; задайте **`OCR_ANALYZE_RAW_BASE`** (префикс URL ветки, например `https://raw.githubusercontent.com/user/OCR-Analyze/main`).
+Переменные окружения: `PADDLE_INPUT_DIR`, `PADDLE_OUTPUT_DIR`, `PADDLE_OCR_LANG` (по умолчанию в скрипте `ru`), `PADDLE_OCR_VERSION` (часто `PP-OCRv5`), `PADDLE_NORMALIZE`. Флаги `--use-gpu` / `--no-use-gpu` переопределяют автоопределение CUDA. В Colab при отсутствии скрипта в клоне см. **`OCR_ANALYZE_RAW_BASE`** в `notes/paddle_colab.ipynb` (ячейка 3).
 
 ---
 

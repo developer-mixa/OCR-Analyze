@@ -10,12 +10,15 @@
 
 **Зависимости:** ``pip install jiwer paddlepaddle paddleocr`` (GPU: см. https://www.paddlepaddle.org.cn/install/quick )
 
+В **PaddleOCR 3.x** код языка ``cyrillic`` как у MinerU **не поддерживается**; для русского текста используйте ``--lang ru`` и при необходимости ``--ocr-version PP-OCRv5`` (см. приложение к документации PaddleOCR).
+
 Пример из корня репозитория::
 
   python scripts/paddle_image_benchmark.py \\
     --input-dir input/data/1 \\
     --output-dir output/paddle_benchmark \\
-    --lang cyrillic
+    --lang ru \\
+    --ocr-version PP-OCRv5
 """
 
 from __future__ import annotations
@@ -75,6 +78,20 @@ def _inject_metrics_path() -> None:
         sys.path.insert(0, str(p))
 
 
+# Старые/удобные имена → коды PaddleOCR 3.x (см. таблицу lang для PP-OCRv5)
+_PADDLE_LANG_ALIASES: dict[str, str] = {
+    "cyrillic": "ru",
+    "east_slavic": "ru",
+    "east-slavic": "ru",
+    "russian": "ru",
+}
+
+
+def resolve_paddle_lang(lang: str) -> str:
+    key = lang.strip().lower()
+    return _PADDLE_LANG_ALIASES.get(key, lang.strip())
+
+
 def ocr_lines_from_paddle_result(result: object) -> list[str]:
     """Извлекает строки текста из результата ocr.ocr(...)."""
     lines: list[str] = []
@@ -103,6 +120,7 @@ def run_paddle_ocr(
     *,
     image: Path,
     lang: str,
+    ocr_version: str | None,
     use_angle_cls: bool,
     use_gpu: bool | None,
 ) -> tuple[str | None, str]:
@@ -119,19 +137,30 @@ def run_paddle_ocr(
         "lang": lang,
         "show_log": False,
     }
+    if ocr_version:
+        kwargs["ocr_version"] = ocr_version
     if use_gpu is not None:
         kwargs["use_gpu"] = use_gpu
 
-    try:
-        ocr = PaddleOCR(**kwargs)
-    except TypeError:
-        kwargs.pop("use_gpu", None)
+    ocr = None
+    last_err: Exception | None = None
+    for attempt in range(3):
         try:
             ocr = PaddleOCR(**kwargs)
+            break
+        except TypeError:
+            if "ocr_version" in kwargs:
+                kwargs.pop("ocr_version", None)
+                continue
+            if "use_gpu" in kwargs:
+                kwargs.pop("use_gpu", None)
+                continue
+            return "PaddleOCR init: несовместимые аргументы (lang / ocr_version / use_gpu)", ""
         except Exception as e:
-            return f"PaddleOCR init: {e}", ""
-    except Exception as e:
-        return f"PaddleOCR init: {e}", ""
+            last_err = e
+            break
+    if ocr is None:
+        return f"PaddleOCR init: {last_err!s}" if last_err else "PaddleOCR init: неизвестная ошибка", ""
 
     try:
         result = ocr.ocr(str(image), cls=bool(use_angle_cls))
@@ -149,8 +178,13 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--output-dir", type=Path, default=None, help="Куда писать артефакты (по умолчанию output/paddle_benchmark)")
     p.add_argument(
         "--lang",
-        default=os.environ.get("PADDLE_OCR_LANG", "cyrillic"),
-        help="Язык PaddleOCR: ch, en, cyrillic, … (см. документацию PaddleOCR)",
+        default=os.environ.get("PADDLE_OCR_LANG", "ru"),
+        help="Код языка PaddleOCR 3.x (русский: ru). Алиасы: cyrillic→ru (см. доку PaddleOCR PP-OCRv5)",
+    )
+    p.add_argument(
+        "--ocr-version",
+        default=os.environ.get("PADDLE_OCR_VERSION") or "PP-OCRv5",
+        help="Версия OCR (PaddleOCR 3.x), например PP-OCRv5, PP-OCRv4. Пустая строка = не передавать в API",
     )
     p.add_argument("--no-angle-cls", action="store_true", help="Отключить классификацию угла текста")
     p.add_argument(
@@ -182,6 +216,8 @@ def main() -> int:
     if not inp.is_dir():
         raise SystemExit(f"Нет каталога: {inp.resolve()}")
 
+    ocr_ver = (args.ocr_version or "").strip() or None
+
     out_root = args.output_dir or Path(os.environ.get("PADDLE_OUTPUT_DIR", "output/paddle_benchmark"))
     out_root.mkdir(parents=True, exist_ok=True)
     hyp_root = out_root / "hypotheses" / "paddle"
@@ -198,8 +234,11 @@ def main() -> int:
     elapsed_ok: list[float] = []
     n_files_with_reference = 0
 
-    lang = (args.lang or "cyrillic").strip()
-    model_label = f"paddleocr:lang={lang}"
+    lang_raw = (args.lang or "ru").strip()
+    lang = resolve_paddle_lang(lang_raw)
+    if lang.lower() != lang_raw.lower():
+        print(f"paddle: язык {lang_raw!r} → {lang!r} (требование PaddleOCR 3.x / PP-OCRv5)")
+    model_label = f"paddleocr:lang={lang}" + (f":{ocr_ver}" if ocr_ver else "")
     use_angle_cls = not args.no_angle_cls
 
     use_gpu: bool | None = args.use_gpu
@@ -245,6 +284,7 @@ def main() -> int:
                 err, text = run_paddle_ocr(
                     image=img,
                     lang=lang,
+                    ocr_version=ocr_ver,
                     use_angle_cls=use_angle_cls,
                     use_gpu=use_gpu,
                 )
@@ -266,6 +306,8 @@ def main() -> int:
                 "hypothesis_path": str(hyp_path) if err is None else None,
                 "meta": {
                     "lang": lang,
+                    "lang_cli": lang_raw,
+                    "ocr_version": ocr_ver,
                     "use_angle_cls": use_angle_cls,
                     "use_gpu": use_gpu,
                     "dry_run": args.dry_run,
@@ -283,7 +325,10 @@ def main() -> int:
             jf.write(json.dumps(row, ensure_ascii=False) + "\n")
 
     n_cer = len(refs_concat)
-    comment = f"paddle_image_benchmark; n_files={len(images)}; n_with_cer={n_cer}; lang={lang}"
+    comment = (
+        f"paddle_image_benchmark; n_files={len(images)}; n_with_cer={n_cer}; "
+        f"lang={lang}; ocr_version={ocr_ver or 'default'}"
+    )
     if not refs_concat:
         if args.dry_run:
             token_note = (
