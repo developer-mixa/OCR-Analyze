@@ -9,8 +9,10 @@
 
 **Эталоны:** ``<stem>.ref.txt`` → ``<stem>.ref.md`` → ``<stem>.txt`` → ``<stem>.md``.
 
-**Зависимости:** ``pip install jiwer`` + зависимости модели (см. ``notes/requirements-ocr-notebook-colab.txt``):
-``transformers``, ``torch``, ``accelerate``, ``sentencepiece``, ``verovio``, ``Pillow``, …
+**Зависимости:** ``pip install jiwer`` + зависимости модели (см. ``notes/requirements-ocr-notebook-colab.txt``).
+Важно: remote code **GOT-OCR2_0** совместим с **transformers 4.40.x** (на 4.41+ часто
+``DynamicCache`` / ``seen_tokens``). Ставьте зависимости из репозитория или
+``pip install 'transformers>=4.40.0,<4.41.0'``.
 
 Пример из корня репозитория::
 
@@ -115,7 +117,13 @@ def run_got_chat(model, tokenizer, image: Path, ocr_type: str) -> tuple[str | No
         hyp = res if isinstance(res, str) else str(res)
         return None, hyp, time.perf_counter() - t0
     except Exception as e:
-        return f"GOT infer: {e}", "", time.perf_counter() - t0
+        msg = str(e)
+        if "seen_tokens" in msg or "DynamicCache" in msg:
+            msg += (
+                " — типичная несовместимость с transformers>=4.41; "
+                "pip install 'transformers>=4.40.0,<4.41.0' (см. notes/requirements-ocr-notebook-colab.txt)"
+            )
+        return f"GOT infer: {msg}", "", time.perf_counter() - t0
 
 
 def parse_args() -> argparse.Namespace:

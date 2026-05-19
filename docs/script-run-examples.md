@@ -194,7 +194,7 @@ python scripts/fill_ocr_analyze_odt.py
 
 ## GOT-OCR2.0 — изображения vs эталон (Hugging Face, в т.ч. Colab)
 
-**Зависимости:** `pip install jiwer` и пакеты из **`notes/requirements-ocr-notebook-colab.txt`** (в т.ч. `transformers`, `torch`, `verovio`, `accelerate`). Colab: **`notes/got_colab.ipynb`** — ячейки **0–4** по порядку; развёрнутый ноутбук с unit-тестами — **`notes/statisctics.ipynb`**.
+**Зависимости:** `pip install jiwer` и пакеты из **`notes/requirements-ocr-notebook-colab.txt`** (в т.ч. **`transformers` 4.40.x** — remote code GOT-OCR2_0 не дружит с 4.41+ из‑за `DynamicCache.seen_tokens`). Colab: **`notes/got_colab.ipynb`** — ячейки **0–4** по порядку; развёрнутый ноутбук с unit-тестами — **`notes/statisctics.ipynb`**. После смены версии `transformers` в Colab при необходимости **Runtime → Restart session**.
 
 Эталоны рядом с PNG — как у MinerU/Paddle. Скрипт пишет `output/.../hypotheses/got/<stem>.txt`, `got_runs.jsonl`, `got_summaries.json` (ключ **`got_ocr2`**), при успехе — **`got_hypotheses_raw.json`**, **`got_hypotheses_concat.txt`**, пути в **`got_ocr2._outputs`**.
 
