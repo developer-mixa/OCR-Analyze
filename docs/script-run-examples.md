@@ -175,7 +175,7 @@ python scripts/paddle_image_benchmark.py \
   --dry-run
 ```
 
-Переменные окружения: `PADDLE_INPUT_DIR`, `PADDLE_OUTPUT_DIR`, `PADDLE_OCR_LANG`, `PADDLE_NORMALIZE`. Флаги `--use-gpu` / `--no-use-gpu` переопределяют автоопределение CUDA.
+Переменные окружения: `PADDLE_INPUT_DIR`, `PADDLE_OUTPUT_DIR`, `PADDLE_OCR_LANG`, `PADDLE_NORMALIZE`. Флаги `--use-gpu` / `--no-use-gpu` переопределяют автоопределение CUDA. В Colab, если в git-клоне нет `paddle_image_benchmark.py`, ноутбук может подтянуть файл с Raw; задайте **`OCR_ANALYZE_RAW_BASE`** (префикс URL ветки, например `https://raw.githubusercontent.com/user/OCR-Analyze/main`).
 
 ---
 
