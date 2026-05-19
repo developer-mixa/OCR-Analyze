@@ -7,10 +7,13 @@
     "Unit Test Rate": null,
     "Внутренний парсер": "mineru",
     "Токены": {
-      "note": "нет эталонов — CER не считался"
+      "note": "режим --dry-run: нет ни одного файла hypotheses/mineru/<stem>.md — сначала полный прогон без --dry-run (или укажите --output-dir с уже сохранёнными .md)."
     },
     "Доп. Комментарии": "mineru_image_benchmark; n_files=4; n_with_cer=0; backend=pipeline",
     "Скорость": null,
+    "_run_mode": {
+      "dry_run": true
+    },
     "_outputs": {
       "hypotheses_dir": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/mineru_benchmark/hypotheses/mineru",
       "jsonl": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/mineru_benchmark/mineru_runs.jsonl",

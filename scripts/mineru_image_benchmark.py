@@ -196,7 +196,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--dry-run",
         action="store_true",
-        help="Не вызывать mineru; только пересчитать метрики, если в hypotheses уже есть .md",
+        help="Не вызывать mineru; только пересчитать метрики по уже сохранённым hypotheses/mineru/<stem>.md",
     )
     return p.parse_args()
 
@@ -234,6 +234,14 @@ def main() -> int:
         model_label += f"(api={args.api_url})"
 
     raw_hypotheses: dict[str, str] = {}
+    n_files_with_reference = 0
+
+    if args.dry_run:
+        print(
+            "Режим --dry-run: mineru не вызывается. Берутся только уже сохранённые файлы",
+            hyp_root / "<stem>.md",
+            "— без них в jsonl будет ошибка на каждый PNG.",
+        )
 
     with jsonl_path.open("w", encoding="utf-8") as jf:
         for img in images:
@@ -241,6 +249,8 @@ def main() -> int:
                 continue
             ref_raw = load_reference(img)
             had_ref = bool(ref_raw and ref_raw.strip())
+            if had_ref:
+                n_files_with_reference += 1
             ref_n = normalize_text(ref_raw or "", args.normalize)
 
             hyp_path = hyp_root / f"{img.stem}.md"
@@ -297,6 +307,7 @@ def main() -> int:
                     "method": args.method,
                     "lang": args.lang,
                     "mineru_bin": args.mineru_bin,
+                    "dry_run": args.dry_run,
                 },
                 "had_reference": had_ref,
                 "CER": None,
@@ -313,6 +324,18 @@ def main() -> int:
     n_cer = len(refs_concat)
     comment = f"mineru_image_benchmark; n_files={len(images)}; n_with_cer={n_cer}; backend={backend}"
     if not refs_concat:
+        if args.dry_run:
+            token_note = (
+                "режим --dry-run: нет ни одного файла hypotheses/mineru/<stem>.md — "
+                "сначала полный прогон без --dry-run (или укажите --output-dir с уже сохранёнными .md)."
+            )
+        elif n_files_with_reference > 0:
+            token_note = (
+                "эталоны есть, но ни для одного файла нет успешной гипотезы — см. поле error в mineru_runs.jsonl "
+                "(mineru, dry-run или пустой markdown)."
+            )
+        else:
+            token_note = "нет эталонов рядом с PNG — CER не считался"
         summary = {
             "Model": model_label,
             "Final Score": None,
@@ -320,9 +343,10 @@ def main() -> int:
             "CER": None,
             "Unit Test Rate": None,
             "Внутренний парсер": "mineru",
-            "Токены": {"note": "нет эталонов — CER не считался"},
+            "Токены": {"note": token_note},
             "Доп. Комментарии": comment,
             "Скорость": None,
+            "_run_mode": {"dry_run": bool(args.dry_run)},
         }
     else:
         summary = build_metric_row(
@@ -339,6 +363,7 @@ def main() -> int:
                 "total_elapsed_sec": round(sum(elapsed_ok), 3),
                 "n_files_timed": len(elapsed_ok),
             }
+        summary["_run_mode"] = {"dry_run": bool(args.dry_run)}
 
     bundle_json = out_root / "mineru_hypotheses_raw.json"
     bundle_txt = out_root / "mineru_hypotheses_concat.txt"
