@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import statistics
 import sys
@@ -93,11 +94,31 @@ def resolve_paddle_lang(lang: str) -> str:
 
 
 def ocr_lines_from_paddle_result(result: object) -> list[str]:
-    """Извлекает строки текста из результата ocr.ocr(...)."""
+    """Извлекает строки из результата PaddleOCR: 3.x (``predict`` → ``rec_texts``) или 2.x (``ocr``)."""
     lines: list[str] = []
     if not result:
         return lines
-    # Обычно result[0] — список детекций для первой страницы
+    # --- PaddleOCR 3.x / PaddleX: список страниц/результатов с полем rec_texts ---
+    if isinstance(result, (list, tuple)) and result:
+        first = result[0]
+        rec_texts = None
+        if isinstance(first, dict):
+            rec_texts = first.get("rec_texts")
+        else:
+            rec_texts = getattr(first, "rec_texts", None)
+        if rec_texts is not None:
+            for page in result:
+                if page is None:
+                    continue
+                rt = page.get("rec_texts") if isinstance(page, dict) else getattr(page, "rec_texts", None)
+                if not rt:
+                    continue
+                for t in rt:
+                    s = str(t).strip()
+                    if s:
+                        lines.append(s)
+            return lines
+    # --- PaddleOCR 2.x: result[0] — список [[box], (text, score)], ...] ---
     page = result[0] if isinstance(result, (list, tuple)) and result else result
     if not page:
         return lines
@@ -127,19 +148,23 @@ def run_paddle_ocr(
     """
     Возвращает (ошибка или None, текст гипотезы).
 
-    PaddleOCR **3.x** не принимает ``use_gpu``; при явном выборе CPU/GPU передаётся
-    аргумент ``device`` (``gpu:0`` / ``cpu``). Если библиотека не знает ``device`` —
-    повтор без него.
+    PaddleOCR **3.x** (PaddleX): в общий конструктор не попадают аргументы 2.x вроде
+    ``use_gpu`` / ``show_log`` — устройство через ``device``, логи через ``logging``
+    (см. документацию Logging в 3.x). ``use_angle_cls`` пока поддерживается как
+    устаревший алиас к ``use_textline_orientation``.
     """
     try:
         from paddleocr import PaddleOCR  # type: ignore[import-untyped]
     except ImportError as e:
         return f"нет пакета paddleocr (pip install paddlepaddle paddleocr): {e}", ""
 
+    # 3.x: show_log убран; тише консоль через стандартный logging
+    for _log_name in ("paddleocr", "paddlex", "paddle"):
+        logging.getLogger(_log_name).setLevel(logging.WARNING)
+
     kwargs: dict = {
         "use_angle_cls": use_angle_cls,
         "lang": lang,
-        "show_log": False,
     }
     if ocr_version:
         kwargs["ocr_version"] = ocr_version
@@ -178,9 +203,13 @@ def run_paddle_ocr(
         return f"PaddleOCR init: {last_err!s}" if last_err else "PaddleOCR init: неизвестная ошибка", ""
 
     try:
-        result = ocr.ocr(str(image), cls=bool(use_angle_cls))
+        # 3.x: ocr() — обёртка над predict(); у predict() нет аргумента cls=.
+        if hasattr(ocr, "predict"):
+            result = ocr.predict(str(image))
+        else:
+            result = ocr.ocr(str(image), cls=bool(use_angle_cls))
     except Exception as e:
-        return f"PaddleOCR ocr: {e}", ""
+        return f"PaddleOCR infer: {e}", ""
 
     lines = ocr_lines_from_paddle_result(result)
     return None, "\n".join(lines)
