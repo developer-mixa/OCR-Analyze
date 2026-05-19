@@ -180,6 +180,18 @@ python scripts/paddle_image_benchmark.py \
 
 ---
 
+## fill_ocr_analyze_odt — отчёт `ocr-analyze.odt` (MinerU + Paddle)
+
+**Зависимости:** `pip install jiwer` (как у бенчмарков). Скрипт пересчитывает метрики из репозитория и перезаписывает **`ocr-analyze.odt`** в корне: сводная таблица (MinerU по `output/mineru/*.md`, Paddle по `output/paddle/*.txt`) и таблица **по каждому PNG** (CER/WER, время из `output/mineru/mineru_runs.jsonl` и `output/paddle/paddle_runs.jsonl`, столбец «ниже CER»).
+
+```bash
+python scripts/fill_ocr_analyze_odt.py
+```
+
+Запускать из корня репозитория. После обновления эталонов или гипотез перезапустите скрипт, чтобы обновить ODT.
+
+---
+
 ## task03 — сравнение эталона и текста (в т.ч. с внешнего OCR)
 
 **Зависимости:** `pip install jiwer`

@@ -1,0 +1,38 @@
+{
+    "mineru": {
+      "Model": "mineru_cli:pipeline",
+      "Final Score": 59.84,
+      "Accuracy": 0.598351,
+      "CER": 0.401649,
+      "Unit Test Rate": null,
+      "Внутренний парсер": "mineru",
+      "Токены": {
+        "hypothesis_chars": 7015,
+        "hypothesis_words_approx": 744,
+        "note": "грубые счётчики по нормализованной гипотезе; токены биллинга — из usage API если есть"
+      },
+      "Доп. Комментарии": "mineru_image_benchmark; n_files=4; n_with_cer=4; backend=pipeline",
+      "Скорость": {
+        "mean_elapsed_sec_per_file": 46.0709,
+        "total_elapsed_sec": 184.284,
+        "n_files_timed": 4
+      },
+      "_diagnostics": {
+        "normalize": "nfkc_ws",
+        "reference_chars": 5699,
+        "hypothesis_chars": 7015,
+        "WER": 0.452292
+      },
+      "_run_mode": {
+        "dry_run": false
+      },
+      "_outputs": {
+        "hypotheses_dir": "/content/OCR-Analyze/output/mineru_benchmark/hypotheses/mineru",
+        "jsonl": "/content/OCR-Analyze/output/mineru_benchmark/mineru_runs.jsonl",
+        "summaries_json": "/content/OCR-Analyze/output/mineru_benchmark/mineru_summaries.json",
+        "hypotheses_bundle_json": "/content/OCR-Analyze/output/mineru_benchmark/mineru_hypotheses_raw.json",
+        "hypotheses_concat_txt": "/content/OCR-Analyze/output/mineru_benchmark/mineru_hypotheses_concat.txt",
+        "n_bundled_files": 4
+      }
+    }
+  }

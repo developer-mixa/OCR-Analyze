@@ -1,0 +1,38 @@
+{
+    "paddleocr": {
+      "Model": "paddleocr:lang=ru:PP-OCRv5",
+      "Final Score": 42.02,
+      "Accuracy": 0.420249,
+      "CER": 0.579751,
+      "Unit Test Rate": null,
+      "Внутренний парсер": "paddleocr",
+      "Токены": {
+        "hypothesis_chars": 5605,
+        "hypothesis_words_approx": 790,
+        "note": "грубые счётчики по нормализованной гипотезе; токены биллинга — из usage API если есть"
+      },
+      "Доп. Комментарии": "paddle_image_benchmark; n_files=4; n_with_cer=4; lang=ru; ocr_version=PP-OCRv5",
+      "Скорость": {
+        "mean_elapsed_sec_per_file": 53.5164,
+        "total_elapsed_sec": 214.065,
+        "n_files_timed": 4
+      },
+      "_diagnostics": {
+        "normalize": "nfkc_ws",
+        "reference_chars": 5699,
+        "hypothesis_chars": 5605,
+        "WER": 0.745973
+      },
+      "_run_mode": {
+        "dry_run": false
+      },
+      "_outputs": {
+        "hypotheses_dir": "/content/OCR-Analyze/output/paddle_benchmark/hypotheses/paddle",
+        "jsonl": "/content/OCR-Analyze/output/paddle_benchmark/paddle_runs.jsonl",
+        "summaries_json": "/content/OCR-Analyze/output/paddle_benchmark/paddle_summaries.json",
+        "hypotheses_bundle_json": "/content/OCR-Analyze/output/paddle_benchmark/paddle_hypotheses_raw.json",
+        "hypotheses_concat_txt": "/content/OCR-Analyze/output/paddle_benchmark/paddle_hypotheses_concat.txt",
+        "n_bundled_files": 4
+      }
+    }
+  }
