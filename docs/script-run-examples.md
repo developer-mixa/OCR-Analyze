@@ -115,7 +115,7 @@ python scripts/draft_reference_from_local_ocr.py --input-dir "input/data/1" --te
 
 **Зависимости:** `pip install jiwer` + установка [MinerU](https://opendatalab.github.io/MinerU/) (в т.ч. `mineru` в PATH). Метрики те же поля, что в `responses_api_analyze/metrics.py` (CER, Final Score, …). Colab: ноутбук **`notes/mineru_colab.ipynb`** — шесть кодовых ячеек **0–5** по порядку, без ручного ввода команд в терминал (настройки — переменные Python в ячейках). В `notes/statisctics.ipynb` только GOT-OCR2 — MinerU туда не смешан.
 
-Эталоны рядом с PNG: `stem.ref.txt`, `stem.ref.md`, … Скрипт вызывает `mineru -p <файл> -o <workdir> -b <backend>`, забирает сгенерированный `*.md`, пишет `output/.../hypotheses/mineru/<stem>.md`, JSONL и `mineru_summaries.json`. Сырой текст всех успешных прогонов дублируется в **`mineru_hypotheses_raw.json`** и **`mineru_hypotheses_concat.txt`** (удобно скачать из Colab); абсолютные пути — в **`mineru_summaries.json` → `mineru._outputs`**.
+Эталоны рядом с PNG: `stem.ref.txt`, `stem.ref.md`, … Скрипт вызывает `mineru -p <файл> -o <workdir> -b <backend>`, забирает сгенерированный `*.md`, пишет `output/.../hypotheses/mineru/<stem>.md`, JSONL и `mineru_summaries.json`. Сырой текст всех успешных прогонов дублируется в **`mineru_hypotheses_raw.json`** и **`mineru_hypotheses_concat.txt`** (удобно скачать из Colab); абсолютные пути — в **`mineru_summaries.json` → `mineru._outputs`**. Пример заполнения сводной таблицы по полям метрик: **`docs/mineru_benchmark_table_snapshot.md`**.
 
 **Colab:** Runtime → GPU. Если недоступен Hugging Face: `export MINERU_MODEL_SOURCE=modelscope`. На бесплатном T4 разумно `--backend pipeline`; первый прогон качает модели (долго).
 
@@ -149,6 +149,33 @@ python scripts/mineru_image_benchmark.py \
 ```
 
 Полезные переменные окружения: `MINERU_BIN`, `MINERU_BACKEND`, `MINERU_METHOD`, `MINERU_LANG`, `MINERU_API_URL`, `MINERU_FILE_TIMEOUT_SEC`, `MINERU_INPUT_DIR`, `MINERU_OUTPUT_DIR`, `MINERU_NORMALIZE`.
+
+---
+
+## PaddleOCR — изображения vs эталон (Python API, в т.ч. Google Colab)
+
+**Зависимости:** `pip install jiwer paddlepaddle paddleocr` (GPU: `paddlepaddle-gpu`, см. [установку Paddle](https://www.paddlepaddle.org.cn/install/quick)). Метрики те же, что у MinerU (`responses_api_analyze/metrics.py`). Colab: **`notes/paddle_colab.ipynb`** — шесть ячеек **0–5** по порядку.
+
+Эталоны рядом с PNG — как у MinerU. Скрипт пишет `output/.../hypotheses/paddle/<stem>.txt`, `paddle_runs.jsonl`, `paddle_summaries.json` (ключ верхнего уровня **`paddleocr`**), при успехе — **`paddle_hypotheses_raw.json`**, **`paddle_hypotheses_concat.txt`**, пути в **`paddleocr._outputs`**.
+
+```bash
+pip install jiwer paddlepaddle paddleocr
+python scripts/paddle_image_benchmark.py \
+  --input-dir "input/data/1" \
+  --output-dir "output/paddle_benchmark" \
+  --lang cyrillic
+```
+
+Пересчёт метрик по уже сохранённым `.txt` (без вызова OCR):
+
+```bash
+python scripts/paddle_image_benchmark.py \
+  --input-dir "input/data/1" \
+  --output-dir "output/paddle_benchmark" \
+  --dry-run
+```
+
+Переменные окружения: `PADDLE_INPUT_DIR`, `PADDLE_OUTPUT_DIR`, `PADDLE_OCR_LANG`, `PADDLE_NORMALIZE`. Флаги `--use-gpu` / `--no-use-gpu` переопределяют автоопределение CUDA.
 
 ---
 
