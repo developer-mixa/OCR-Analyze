@@ -176,7 +176,7 @@ python scripts/paddle_image_benchmark.py \
   --dry-run
 ```
 
-Переменные окружения: `PADDLE_INPUT_DIR`, `PADDLE_OUTPUT_DIR`, `PADDLE_OCR_LANG`, `PADDLE_OCR_VERSION`, `PADDLE_NORMALIZE`. Флаги `--use-gpu` / `--no-use-gpu` в скрипте превращаются в `device=gpu:0` или `cpu` для PaddleOCR 3.x (аргументы 2.x `use_gpu` и `show_log` в конструктор не передаются; вывод логов — по [Logging 3.x](https://www.paddleocr.ai/main/en/version3.x/logging.html)).
+Переменные окружения: `PADDLE_INPUT_DIR`, `PADDLE_OUTPUT_DIR`, `PADDLE_OCR_LANG`, `PADDLE_OCR_VERSION`, `PADDLE_NORMALIZE`, `PADDLE_ENABLE_MKLDNN` (`1`/`true` — включить MKL-DNN; по умолчанию в скрипте MKL-DNN выключен из‑за сбоев Paddle CPU в OneDNN). Флаги `--use-gpu` / `--no-use-gpu` в скрипте превращаются в `device=gpu:0` или `cpu` для PaddleOCR 3.x (аргументы 2.x `use_gpu` и `show_log` в конструктор не передаются; вывод логов — по [Logging 3.x](https://www.paddleocr.ai/main/en/version3.x/logging.html)). Флаг `--enable-mkldnn` включает ускорение MKL-DNN, если оно вам стабильно на вашей сборке Paddle.
 
 ---
 

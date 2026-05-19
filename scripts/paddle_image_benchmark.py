@@ -144,6 +144,7 @@ def run_paddle_ocr(
     ocr_version: str | None,
     use_angle_cls: bool,
     use_gpu: bool | None,
+    enable_mkldnn: bool = False,
 ) -> tuple[str | None, str]:
     """
     Возвращает (ошибка или None, текст гипотезы).
@@ -152,6 +153,10 @@ def run_paddle_ocr(
     ``use_gpu`` / ``show_log`` — устройство через ``device``, логи через ``logging``
     (см. документацию Logging в 3.x). ``use_angle_cls`` пока поддерживается как
     устаревший алиас к ``use_textline_orientation``.
+
+    На CPU у части сборок Paddle включённый OneDNN даёт
+    ``ConvertPirAttribute2RuntimeAttribute`` / ``onednn_instruction``; по умолчанию
+    передаём ``enable_mkldnn=False`` (см. общие аргументы PaddleX в 3.x).
     """
     try:
         from paddleocr import PaddleOCR  # type: ignore[import-untyped]
@@ -174,6 +179,10 @@ def run_paddle_ocr(
     elif use_gpu is False:
         kwargs["device"] = "cpu"
 
+    # PaddleOCR 3.x / PaddleX: общий аргумент пайплайна (не 2.x use_mkldnn в старом API)
+    if not enable_mkldnn:
+        kwargs["enable_mkldnn"] = False
+
     ocr = None
     last_err: Exception | None = None
     for _ in range(6):
@@ -184,6 +193,9 @@ def run_paddle_ocr(
             last_err = e
             if "device" in kwargs:
                 kwargs.pop("device", None)
+                continue
+            if "enable_mkldnn" in kwargs:
+                kwargs.pop("enable_mkldnn", None)
                 continue
             if "ocr_version" in kwargs:
                 kwargs.pop("ocr_version", None)
@@ -197,6 +209,9 @@ def run_paddle_ocr(
                 continue
             if ("unknown argument" in err_l or "unexpected keyword" in err_l) and "ocr_version" in kwargs:
                 kwargs.pop("ocr_version", None)
+                continue
+            if ("unknown argument" in err_l or "unexpected keyword" in err_l) and "enable_mkldnn" in kwargs:
+                kwargs.pop("enable_mkldnn", None)
                 continue
             return f"PaddleOCR init: {e}", ""
     if ocr is None:
@@ -236,6 +251,11 @@ def parse_args() -> argparse.Namespace:
         default=None,
         action=argparse.BooleanOptionalAction,
         help="Предпочтение устройства: в PaddleOCR 3.x передаётся как device=gpu:0/cpu (не use_gpu)",
+    )
+    p.add_argument(
+        "--enable-mkldnn",
+        action="store_true",
+        help="Включить MKL-DNN/OneDNN в PaddleX (по умолчанию выкл. — обход падений CPU вроде onednn_instruction / ConvertPirAttribute2RuntimeAttribute)",
     )
     p.add_argument(
         "--normalize",
@@ -294,6 +314,9 @@ def main() -> int:
         except Exception:
             use_gpu = False
 
+    env_mkldnn = os.environ.get("PADDLE_ENABLE_MKLDNN", "").strip().lower() in ("1", "true", "yes", "on")
+    enable_mkldnn = bool(args.enable_mkldnn or env_mkldnn)
+
     raw_hypotheses: dict[str, str] = {}
 
     if args.dry_run:
@@ -331,6 +354,7 @@ def main() -> int:
                     ocr_version=ocr_ver,
                     use_angle_cls=use_angle_cls,
                     use_gpu=use_gpu,
+                    enable_mkldnn=enable_mkldnn,
                 )
                 if err is None and not text.strip():
                     err = "пустой текст OCR"
@@ -354,6 +378,7 @@ def main() -> int:
                     "ocr_version": ocr_ver,
                     "use_angle_cls": use_angle_cls,
                     "use_gpu_preference": use_gpu,
+                    "enable_mkldnn": enable_mkldnn,
                     "dry_run": args.dry_run,
                 },
                 "had_reference": had_ref,
