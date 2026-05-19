@@ -156,7 +156,7 @@ python scripts/mineru_image_benchmark.py \
 
 **Зависимости:** `pip install jiwer paddlepaddle paddleocr` (GPU: `paddlepaddle-gpu`, см. [установку Paddle](https://www.paddlepaddle.org.cn/install/quick)). Метрики те же, что у MinerU (`responses_api_analyze/metrics.py`). Colab: **`notes/paddle_colab.ipynb`** — шесть ячеек **0–5** по порядку.
 
-Эталоны рядом с PNG — как у MinerU. Скрипт пишет `output/.../hypotheses/paddle/<stem>.txt`, `paddle_runs.jsonl`, `paddle_summaries.json` (ключ верхнего уровня **`paddleocr`**), при успехе — **`paddle_hypotheses_raw.json`**, **`paddle_hypotheses_concat.txt`**, пути в **`paddleocr._outputs`**.
+Эталоны рядом с PNG — как у MinerU. Скрипт пишет `output/.../hypotheses/paddle/<stem>.txt`, `paddle_runs.jsonl`, `paddle_summaries.json` (ключ верхнего уровня **`paddleocr`**), при успехе — **`paddle_hypotheses_raw.json`**, **`paddle_hypotheses_concat.txt`**, пути в **`paddleocr._outputs`**. В Colab после обновления репозитория нужен актуальный клон с `scripts/paddle_image_benchmark.py` (в ноутбуке ячейка 1 делает `git pull`; при старом shallow clone иногда проще удалить каталог клона и снова ячейку 1). Если `import paddleocr` ругается на `langchain_text_splitters`, поставьте: `pip install langchain-text-splitters`.
 
 ```bash
 pip install jiwer paddlepaddle paddleocr
