@@ -113,7 +113,7 @@ python scripts/draft_reference_from_local_ocr.py --input-dir "input/data/1" --te
 
 ## MinerU — изображения vs эталон (CLI, в т.ч. Google Colab)
 
-**Зависимости:** `pip install jiwer` + установка [MinerU](https://opendatalab.github.io/MinerU/) (в т.ч. `mineru` в PATH). Метрики те же поля, что в `responses_api_analyze/metrics.py` (CER, Final Score, …). В ноутбуке `notes/statisctics.ipynb` это отдельный **шаг 7b** (`MINERU_INSTALL_MODE` / `MINERU_INSTALL_NOW`), шаг 2 ставит только зависимости GOT-OCR2.
+**Зависимости:** `pip install jiwer` + установка [MinerU](https://opendatalab.github.io/MinerU/) (в т.ч. `mineru` в PATH). Метрики те же поля, что в `responses_api_analyze/metrics.py` (CER, Final Score, …). Пошаговый Colab: ноутбук **`notes/mineru_colab.ipynb`**. В `notes/statisctics.ipynb` только GOT-OCR2 — MinerU туда не смешан.
 
 Эталоны рядом с PNG: `stem.ref.txt`, `stem.ref.md`, … Скрипт вызывает `mineru -p <файл> -o <workdir> -b <backend>`, забирает сгенерированный `*.md`, пишет `output/.../hypotheses/mineru/<stem>.md`, JSONL и `mineru_summaries.json`.
 
