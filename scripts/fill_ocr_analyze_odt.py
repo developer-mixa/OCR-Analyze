@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Заполняет ocr-analyze.odt: сводные метрики MinerU + Paddle и таблица по файлам.
-Источники: input/data/1/*.ref.txt, output/mineru/*.md, output/paddle/*.txt,
-output/mineru/mineru_runs.jsonl и output/paddle/paddle_runs.jsonl (elapsed_sec).
+Заполняет ocr-analyze.odt: сводные метрики MinerU, Paddle, GOT и таблица по файлам.
+Источники: input/data/1/*.ref.txt, output/mineru/*.md, output/paddle/*.txt, output/got/*.txt
+(или hypotheses/got в output/got_benchmark), jsonl с elapsed в output/{mineru,paddle,got}/.
 """
 from __future__ import annotations
 
@@ -61,6 +61,29 @@ def build_table(name: str, headers: list[str], rows: list[list[str]]) -> str:
         out.append(data_row(r))
     out.append("</table:table>")
     return "".join(out)
+
+
+def load_got_hyp_raw(repo: Path, stem: str) -> str:
+    for p in (
+        repo / "output" / "got" / f"{stem}.txt",
+        repo / "output" / "got_benchmark" / "hypotheses" / "got" / f"{stem}.txt",
+    ):
+        if p.is_file():
+            return p.read_text(encoding="utf-8", errors="replace")
+    return ""
+
+
+def got_jsonl_path(repo: Path) -> Path | None:
+    for p in (repo / "output" / "got" / "got_runs.jsonl", repo / "output" / "got_benchmark" / "got_runs.jsonl"):
+        if p.is_file():
+            return p
+    return None
+
+
+def best_by_cer(names_cers: list[tuple[str, float]]) -> str:
+    min_c = min(c for _, c in names_cers)
+    names = [n for n, c in names_cers if abs(c - min_c) < 1e-9]
+    return ", ".join(names) if len(names) > 1 else names[0]
 
 
 def load_jsonl_elapsed(path: Path) -> dict[str, float]:
@@ -181,13 +204,47 @@ def main() -> int:
     )
     wer_p = row_p["_diagnostics"]["WER"]
 
+    refs_g: list[str] = []
+    hyps_g: list[str] = []
+    per_g: list[tuple[str, float | None, float | None]] = []
+    for stem in stems:
+        ref_raw = load_ref(stem)
+        hyp_raw = load_got_hyp_raw(repo, stem)
+        ref_n = normalize_text(ref_raw, norm)
+        hyp_n = normalize_text(hyp_raw, norm)
+        if ref_raw and hyp_raw.strip():
+            cer = char_error_rate(ref_n, hyp_n)
+            wer = float(jiwer.wer(ref_n, hyp_n))
+            refs_g.append(ref_n)
+            hyps_g.append(hyp_n)
+        else:
+            cer = wer = None
+        per_g.append((stem, cer, wer))
+
+    row_g: dict | None = None
+    wer_g: float | None = None
+    if refs_g and hyps_g:
+        row_g = build_metric_row(
+            ref_raw="\n".join(refs_g),
+            hyp_raw="\n".join(hyps_g),
+            normalize=norm,
+            model="got:ucaslcl/GOT-OCR2_0|ocr_type=ocr",
+            internal_parser="got_ocr2",
+            extra_comment="output/got/*.txt",
+        )
+        wer_g = float(row_g["_diagnostics"]["WER"])
+
     mineru_times = load_jsonl_elapsed(repo / "output/mineru/mineru_runs.jsonl")
     paddle_times = load_jsonl_elapsed(repo / "output/paddle/paddle_runs.jsonl")
+    got_jsonl = got_jsonl_path(repo)
+    got_times = load_jsonl_elapsed(got_jsonl) if got_jsonl else {}
     mean_m = statistics.mean(mineru_times.values()) if mineru_times else None
     mean_p = statistics.mean(paddle_times.values()) if paddle_times else None
+    mean_g = statistics.mean(got_times.values()) if got_times else None
 
-    mineru_speed = f"{mean_m:.2f} с/файл" if mean_m is not None else "н/д (нет output/mineru/mineru_runs.jsonl)"
-    paddle_speed = f"{mean_p:.2f} с/файл" if mean_p is not None else "н/д (нет output/paddle/paddle_runs.jsonl)"
+    mineru_speed = f"{mean_m:.2f} с/файл" if mean_m is not None else "н/д (нет mineru_runs.jsonl)"
+    paddle_speed = f"{mean_p:.2f} с/файл" if mean_p is not None else "н/д (нет paddle_runs.jsonl)"
+    got_speed = f"{mean_g:.2f} с/файл" if mean_g is not None else "н/д (нет got_runs.jsonl)"
 
     summary_headers = ["Model", "Final Score", "Accuracy", "CER", "WER", "Avg speed"]
     summary_rows = [
@@ -208,28 +265,42 @@ def main() -> int:
             paddle_speed,
         ],
     ]
+    if row_g is not None and wer_g is not None:
+        summary_rows.append(
+            [
+                "GOT-OCR2.0 (HF, ocr)",
+                f"{row_g['Final Score']}",
+                f"{row_g['Accuracy']}",
+                f"{row_g['CER']}",
+                f"{round(wer_g, 6)}",
+                got_speed,
+            ]
+        )
 
     per_headers = [
         "Файл",
         "MinerU CER",
-        "MinerU WER",
-        "MinerU, с",
+        "MU WER",
+        "MU,с",
         "Paddle CER",
-        "Paddle WER",
-        "Paddle, с",
-        "Ниже CER",
+        "PD WER",
+        "PD,с",
+        "GOT CER",
+        "GOT WER",
+        "GOT,с",
+        "Лучший CER",
     ]
     per_rows: list[list[str]] = []
-    for (sm, cm, wm), (sp, cp, wp) in zip(per_m, per_p, strict=True):
+    for (sm, cm, wm), (sp, cp, wp), (sg, cg, wg) in zip(per_m, per_p, per_g, strict=True):
+        assert sm == sp == sg
         img = f"{sm}.png"
-        if cm < cp - 1e-9:
-            winner = "MinerU"
-        elif cp < cm - 1e-9:
-            winner = "Paddle"
-        else:
-            winner = "≈ равны"
         tm = mineru_times.get(sm)
         tp = paddle_times.get(sm)
+        tg = got_times.get(sm)
+        parts_cer: list[tuple[str, float]] = [("MinerU", cm), ("Paddle", cp)]
+        if cg is not None:
+            parts_cer.append(("GOT", cg))
+        winner = best_by_cer(parts_cer)
         per_rows.append(
             [
                 img,
@@ -239,6 +310,9 @@ def main() -> int:
                 f"{cp:.6f}",
                 f"{wp:.6f}",
                 f"{tp:.4f}" if tp is not None else "—",
+                f"{cg:.6f}" if cg is not None else "—",
+                f"{wg:.6f}" if wg is not None else "—",
+                f"{tg:.4f}" if tg is not None else "—",
                 winner,
             ]
         )
@@ -250,9 +324,10 @@ def main() -> int:
         "Методика: эталоны input/data/1 (*.ref.txt), нормализация nfkc_ws, CER/WER как в "
         "scripts/responses_api_analyze/metrics.py (агрегат — склейка нормализованных фрагментов "
         "и повторный nfkc_ws на склейке). Гипотезы: MinerU — output/mineru/*.md, Paddle — "
-        "output/paddle/*.txt. Среднее время — по полю elapsed_sec в output/mineru/mineru_runs.jsonl "
-        "и output/paddle/paddle_runs.jsonl (пути hypothesis в jsonl могут указывать на Colab — на "
-        "цифры метрик это не влияет). CER по jiwer может быть >1 при сильном расхождении с эталоном."
+        "output/paddle/*.txt, GOT — output/got/*.txt (или output/got_benchmark/hypotheses/got/). "
+        "Время — elapsed_sec в mineru_runs.jsonl, paddle_runs.jsonl, got_runs.jsonl. "
+        "Столбец «Лучший CER» — минимум CER среди доступных движков на файле. "
+        "CER по jiwer может быть >1."
     )
 
     odt = repo / "ocr-analyze.odt"

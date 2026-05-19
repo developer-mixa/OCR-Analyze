@@ -180,9 +180,9 @@ python scripts/paddle_image_benchmark.py \
 
 ---
 
-## fill_ocr_analyze_odt — отчёт `ocr-analyze.odt` (MinerU + Paddle)
+## fill_ocr_analyze_odt — отчёт `ocr-analyze.odt` (MinerU + Paddle + GOT)
 
-**Зависимости:** `pip install jiwer` (как у бенчмарков). Скрипт пересчитывает метрики из репозитория и перезаписывает **`ocr-analyze.odt`** в корне: сводная таблица (MinerU по `output/mineru/*.md`, Paddle по `output/paddle/*.txt`) и таблица **по каждому PNG** (CER/WER, время из `output/mineru/mineru_runs.jsonl` и `output/paddle/paddle_runs.jsonl`, столбец «ниже CER»).
+**Зависимости:** `pip install jiwer` (как у бенчмарков). Скрипт пересчитывает метрики из репозитория и перезаписывает **`ocr-analyze.odt`** в корне: сводная таблица (MinerU по `output/mineru/*.md`, Paddle по `output/paddle/*.txt`, GOT по `output/got/*.txt` или `output/got_benchmark/hypotheses/got/*.txt`) и таблица **по каждому PNG** (CER/WER и время из соответствующих `*_runs.jsonl`, столбец **«Лучший CER»** среди трёх движков).
 
 ```bash
 python scripts/fill_ocr_analyze_odt.py

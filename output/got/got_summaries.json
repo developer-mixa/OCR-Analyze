@@ -1,0 +1,38 @@
+{
+    "got_ocr2": {
+      "Model": "got:ucaslcl/GOT-OCR2_0|ocr_type=ocr",
+      "Final Score": 51.92,
+      "Accuracy": 0.519214,
+      "CER": 0.480786,
+      "Unit Test Rate": null,
+      "Внутренний парсер": "got_ocr2",
+      "Токены": {
+        "hypothesis_chars": 6731,
+        "hypothesis_words_approx": 1337,
+        "note": "грубые счётчики по нормализованной гипотезе; токены биллинга — из usage API если есть"
+      },
+      "Доп. Комментарии": "got_image_benchmark; n_files=4; n_with_cer=4; model_id=ucaslcl/GOT-OCR2_0; ocr_type=ocr",
+      "Скорость": {
+        "mean_elapsed_sec_per_file": 41.8976,
+        "total_elapsed_sec": 167.591,
+        "n_files_timed": 4
+      },
+      "_diagnostics": {
+        "normalize": "nfkc_ws",
+        "reference_chars": 5699,
+        "hypothesis_chars": 6731,
+        "WER": 1.122677
+      },
+      "_run_mode": {
+        "dry_run": false
+      },
+      "_outputs": {
+        "hypotheses_dir": "/content/OCR-Analyze/output/got_benchmark/hypotheses/got",
+        "jsonl": "/content/OCR-Analyze/output/got_benchmark/got_runs.jsonl",
+        "summaries_json": "/content/OCR-Analyze/output/got_benchmark/got_summaries.json",
+        "hypotheses_bundle_json": "/content/OCR-Analyze/output/got_benchmark/got_hypotheses_raw.json",
+        "hypotheses_concat_txt": "/content/OCR-Analyze/output/got_benchmark/got_hypotheses_concat.txt",
+        "n_bundled_files": 4
+      }
+    }
+  }
