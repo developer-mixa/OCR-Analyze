@@ -111,6 +111,47 @@ python scripts/draft_reference_from_local_ocr.py --input-dir "input/data/1" --te
 
 ---
 
+## MinerU — изображения vs эталон (CLI, в т.ч. Google Colab)
+
+**Зависимости:** `pip install jiwer` + установка [MinerU](https://opendatalab.github.io/MinerU/) (в т.ч. `mineru` в PATH). Метрики те же поля, что в `responses_api_analyze/metrics.py` (CER, Final Score, …).
+
+Эталоны рядом с PNG: `stem.ref.txt`, `stem.ref.md`, … Скрипт вызывает `mineru -p <файл> -o <workdir> -b <backend>`, забирает сгенерированный `*.md`, пишет `output/.../hypotheses/mineru/<stem>.md`, JSONL и `mineru_summaries.json`.
+
+**Colab:** Runtime → GPU. Если недоступен Hugging Face: `export MINERU_MODEL_SOURCE=modelscope`. На бесплатном T4 разумно `--backend pipeline`; первый прогон качает модели (долго).
+
+```bash
+pip install jiwer
+# далее установка mineru по документации проекта
+python scripts/mineru_image_benchmark.py \
+  --input-dir "input/data/1" \
+  --output-dir "output/mineru_benchmark" \
+  --backend pipeline \
+  --lang cyrillic
+```
+
+Скан-подобные страницы (форсировать OCR-ветку пайплайна):
+
+```bash
+python scripts/mineru_image_benchmark.py \
+  --input-dir "input/data/1" \
+  --backend pipeline \
+  --method ocr \
+  --lang cyrillic
+```
+
+Пересчитать CER по уже сохранённым гипотезам (без вызова mineru):
+
+```bash
+python scripts/mineru_image_benchmark.py \
+  --input-dir "input/data/1" \
+  --output-dir "output/mineru_benchmark" \
+  --dry-run
+```
+
+Полезные переменные окружения: `MINERU_BIN`, `MINERU_BACKEND`, `MINERU_METHOD`, `MINERU_LANG`, `MINERU_API_URL`, `MINERU_FILE_TIMEOUT_SEC`, `MINERU_INPUT_DIR`, `MINERU_OUTPUT_DIR`, `MINERU_NORMALIZE`.
+
+---
+
 ## task03 — сравнение эталона и текста (в т.ч. с внешнего OCR)
 
 **Зависимости:** `pip install jiwer`
