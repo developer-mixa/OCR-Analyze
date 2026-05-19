@@ -115,7 +115,7 @@ python scripts/draft_reference_from_local_ocr.py --input-dir "input/data/1" --te
 
 **Зависимости:** `pip install jiwer` + установка [MinerU](https://opendatalab.github.io/MinerU/) (в т.ч. `mineru` в PATH). Метрики те же поля, что в `responses_api_analyze/metrics.py` (CER, Final Score, …). Пошаговый Colab: ноутбук **`notes/mineru_colab.ipynb`**. В `notes/statisctics.ipynb` только GOT-OCR2 — MinerU туда не смешан.
 
-Эталоны рядом с PNG: `stem.ref.txt`, `stem.ref.md`, … Скрипт вызывает `mineru -p <файл> -o <workdir> -b <backend>`, забирает сгенерированный `*.md`, пишет `output/.../hypotheses/mineru/<stem>.md`, JSONL и `mineru_summaries.json`.
+Эталоны рядом с PNG: `stem.ref.txt`, `stem.ref.md`, … Скрипт вызывает `mineru -p <файл> -o <workdir> -b <backend>`, забирает сгенерированный `*.md`, пишет `output/.../hypotheses/mineru/<stem>.md`, JSONL и `mineru_summaries.json`. Сырой текст всех успешных прогонов дублируется в **`mineru_hypotheses_raw.json`** и **`mineru_hypotheses_concat.txt`** (удобно скачать из Colab); абсолютные пути — в **`mineru_summaries.json` → `mineru._outputs`**.
 
 **Colab:** Runtime → GPU. Если недоступен Hugging Face: `export MINERU_MODEL_SOURCE=modelscope`. На бесплатном T4 разумно `--backend pipeline`; первый прогон качает модели (долго).
 

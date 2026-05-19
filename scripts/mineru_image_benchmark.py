@@ -5,6 +5,9 @@
 Вызывает CLI ``mineru`` (как в документации MinerU 3.x: без ``--api-url`` поднимается временный
 ``mineru-api``). Результат извлекается из сгенерированных ``*.md`` в каталоге вывода задачи.
 
+Дополнительно (удобно скачать из Colab): ``mineru_hypotheses_raw.json`` (стем → сырой markdown) и
+``mineru_hypotheses_concat.txt`` (склейка); пути также в ``mineru_summaries.json`` → ``mineru._outputs``.
+
 **Эталоны** (как в ``run_ocr_api_benchmark``): ``<stem>.ref.txt`` → ``<stem>.ref.md`` → ``<stem>.txt`` → ``<stem>.md``.
 
 **Зависимости (минимум для метрик):**
@@ -230,6 +233,8 @@ def main() -> int:
     if args.api_url:
         model_label += f"(api={args.api_url})"
 
+    raw_hypotheses: dict[str, str] = {}
+
     with jsonl_path.open("w", encoding="utf-8") as jf:
         for img in images:
             if not img.is_file():
@@ -246,6 +251,8 @@ def main() -> int:
             if args.dry_run:
                 if hyp_path.is_file():
                     text = hyp_path.read_text(encoding="utf-8", errors="replace")
+                    if text.strip():
+                        raw_hypotheses[img.stem] = text
                 else:
                     err = "dry-run: нет файла гипотезы " + str(hyp_path)
             else:
@@ -271,6 +278,7 @@ def main() -> int:
                         err = "mineru завершился без .md или пустой markdown"
                     else:
                         hyp_path.write_text(text, encoding="utf-8")
+                        raw_hypotheses[img.stem] = text
                         if not args.keep_work:
                             shutil.rmtree(wdir, ignore_errors=True)
 
@@ -332,6 +340,29 @@ def main() -> int:
                 "n_files_timed": len(elapsed_ok),
             }
 
+    bundle_json = out_root / "mineru_hypotheses_raw.json"
+    bundle_txt = out_root / "mineru_hypotheses_concat.txt"
+    if raw_hypotheses:
+        bundle_json.write_text(
+            json.dumps(raw_hypotheses, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        bundle_txt.write_text(
+            "\n\n".join(f"===== {stem} =====\n{text}" for stem, text in sorted(raw_hypotheses.items())),
+            encoding="utf-8",
+        )
+
+    out_meta: dict[str, object] = {
+        "hypotheses_dir": str(hyp_root.resolve()),
+        "jsonl": str(jsonl_path.resolve()),
+        "summaries_json": str((out_root / "mineru_summaries.json").resolve()),
+    }
+    if raw_hypotheses:
+        out_meta["hypotheses_bundle_json"] = str(bundle_json.resolve())
+        out_meta["hypotheses_concat_txt"] = str(bundle_txt.resolve())
+        out_meta["n_bundled_files"] = len(raw_hypotheses)
+    summary["_outputs"] = out_meta
+
     (out_root / "mineru_summaries.json").write_text(
         json.dumps({"mineru": summary}, ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -339,7 +370,10 @@ def main() -> int:
 
     print("Записано:", jsonl_path)
     print("Сводка:", out_root / "mineru_summaries.json")
-    print("Гипотезы:", hyp_root)
+    print("Гипотезы (по файлам):", hyp_root)
+    if raw_hypotheses:
+        print("Сырой текст (все файлы одним JSON):", bundle_json.resolve())
+        print("Сырой текст (склейка .txt):", bundle_txt.resolve())
     return 0
 
 

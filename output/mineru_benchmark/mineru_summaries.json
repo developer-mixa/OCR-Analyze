@@ -1,0 +1,20 @@
+{
+  "mineru": {
+    "Model": "mineru_cli:pipeline",
+    "Final Score": null,
+    "Accuracy": null,
+    "CER": null,
+    "Unit Test Rate": null,
+    "Внутренний парсер": "mineru",
+    "Токены": {
+      "note": "нет эталонов — CER не считался"
+    },
+    "Доп. Комментарии": "mineru_image_benchmark; n_files=4; n_with_cer=0; backend=pipeline",
+    "Скорость": null,
+    "_outputs": {
+      "hypotheses_dir": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/mineru_benchmark/hypotheses/mineru",
+      "jsonl": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/mineru_benchmark/mineru_runs.jsonl",
+      "summaries_json": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/mineru_benchmark/mineru_summaries.json"
+    }
+  }
+}
