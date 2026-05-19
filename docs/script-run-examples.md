@@ -113,7 +113,7 @@ python scripts/draft_reference_from_local_ocr.py --input-dir "input/data/1" --te
 
 ## MinerU — изображения vs эталон (CLI, в т.ч. Google Colab)
 
-**Зависимости:** `pip install jiwer` + установка [MinerU](https://opendatalab.github.io/MinerU/) (в т.ч. `mineru` в PATH). Метрики те же поля, что в `responses_api_analyze/metrics.py` (CER, Final Score, …). Colab: ноутбук **`notes/mineru_colab.ipynb`** — шесть кодовых ячеек **0–5** по порядку, без ручного ввода команд в терминал (настройки — переменные Python в ячейках). В `notes/statisctics.ipynb` только GOT-OCR2 — MinerU туда не смешан.
+**Зависимости:** `pip install jiwer` + установка [MinerU](https://opendatalab.github.io/MinerU/) (в т.ч. `mineru` в PATH). Метрики те же поля, что в `responses_api_analyze/metrics.py` (CER, Final Score, …). Colab: ноутбук **`notes/mineru_colab.ipynb`** — шесть кодовых ячеек **0–5** по порядку, без ручного ввода команд в терминал (настройки — переменные Python в ячейках). **GOT-OCR2:** быстрый Colab — **`notes/got_colab.ipynb`**; развёрнутый ноутбук — **`notes/statisctics.ipynb`**.
 
 Эталоны рядом с PNG: `stem.ref.txt`, `stem.ref.md`, … Скрипт вызывает `mineru -p <файл> -o <workdir> -b <backend>`, забирает сгенерированный `*.md`, пишет `output/.../hypotheses/mineru/<stem>.md`, JSONL и `mineru_summaries.json`. Сырой текст всех успешных прогонов дублируется в **`mineru_hypotheses_raw.json`** и **`mineru_hypotheses_concat.txt`** (удобно скачать из Colab); абсолютные пути — в **`mineru_summaries.json` → `mineru._outputs`**. Пример заполнения сводной таблицы по полям метрик: **`docs/mineru_benchmark_table_snapshot.md`**.
 
@@ -154,7 +154,7 @@ python scripts/mineru_image_benchmark.py \
 
 ## PaddleOCR — изображения vs эталон (Python API, в т.ч. Google Colab)
 
-**Зависимости:** `pip install jiwer paddlepaddle paddleocr` (GPU: `paddlepaddle-gpu`, см. [установку Paddle](https://www.paddlepaddle.org.cn/install/quick)). Метрики те же, что у MinerU (`responses_api_analyze/metrics.py`). Colab: **`notes/paddle_colab.ipynb`** — шесть ячеек **0–5** по порядку.
+**Зависимости:** `pip install jiwer paddlepaddle paddleocr` (GPU: `paddlepaddle-gpu`, см. [установку Paddle](https://www.paddlepaddle.org.cn/install/quick)). Метрики те же, что у MinerU (`responses_api_analyze/metrics.py`). Colab: **`notes/paddle_colab.ipynb`** — шесть ячеек **0–5** по порядку. **GOT-OCR2:** **`notes/got_colab.ipynb`** (ячейки **0–4**).
 
 Эталоны рядом с PNG — как у MinerU. Скрипт пишет `output/.../hypotheses/paddle/<stem>.txt`, `paddle_runs.jsonl`, `paddle_summaries.json` (ключ **`paddleocr`**), при успехе — **`paddle_hypotheses_raw.json`**, **`paddle_hypotheses_concat.txt`**, пути в **`paddleocr._outputs`**. В **PaddleOCR 3.x** для русского задавайте **`--lang ru`** и **`--ocr-version PP-OCRv5`** (в таблице PP-OCRv5 нет кода `cyrillic`; в скрипте алиас `cyrillic`→`ru`). В Colab нужен актуальный клон с `scripts/paddle_image_benchmark.py` (ячейка 1 — `git pull`; при старом shallow clone иногда проще удалить каталог клона). Если `import paddleocr` ругается на `langchain_text_splitters`: `pip install langchain-text-splitters`.
 
@@ -189,6 +189,32 @@ python scripts/fill_ocr_analyze_odt.py
 ```
 
 Запускать из корня репозитория. После обновления эталонов или гипотез перезапустите скрипт, чтобы обновить ODT.
+
+---
+
+## GOT-OCR2.0 — изображения vs эталон (Hugging Face, в т.ч. Colab)
+
+**Зависимости:** `pip install jiwer` и пакеты из **`notes/requirements-ocr-notebook-colab.txt`** (в т.ч. `transformers`, `torch`, `verovio`, `accelerate`). Colab: **`notes/got_colab.ipynb`** — ячейки **0–4** по порядку; развёрнутый ноутбук с unit-тестами — **`notes/statisctics.ipynb`**.
+
+Эталоны рядом с PNG — как у MinerU/Paddle. Скрипт пишет `output/.../hypotheses/got/<stem>.txt`, `got_runs.jsonl`, `got_summaries.json` (ключ **`got_ocr2`**), при успехе — **`got_hypotheses_raw.json`**, **`got_hypotheses_concat.txt`**, пути в **`got_ocr2._outputs`**.
+
+```bash
+pip install -r notes/requirements-ocr-notebook-colab.txt
+python scripts/got_image_benchmark.py \
+  --input-dir "input/data/1" \
+  --output-dir "output/got_benchmark"
+```
+
+Режим только пересчёта метрик по уже сохранённым `.txt`:
+
+```bash
+python scripts/got_image_benchmark.py \
+  --input-dir "input/data/1" \
+  --output-dir "output/got_benchmark" \
+  --dry-run
+```
+
+Переменные окружения: `GOT_INPUT_DIR`, `GOT_OUTPUT_DIR`, `GOT_MODEL_ID` (по умолчанию `ucaslcl/GOT-OCR2_0`), `GOT_OCR_TYPE` (`ocr` / `format`), `GOT_NORMALIZE`.
 
 ---
 

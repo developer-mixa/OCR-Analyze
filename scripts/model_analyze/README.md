@@ -11,4 +11,6 @@
 
 Облачный OCR (Amazon Textract, Google Vision, Aspose.OCR Cloud, FreeOCR.AI RapidAPI) — в `../responses_api_analyze/`.
 
+**GOT-OCR2.0** (тот же формат сводки, что у image-бенчмарков): `../got_image_benchmark.py` в каталоге `scripts/`.
+
 Запуск из корня репозитория (как раньше, см. `docs/script-run-examples.md` — путь `scripts/model_analyze/...`).
