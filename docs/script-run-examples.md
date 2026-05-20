@@ -260,6 +260,13 @@ python scripts/yandex_vision_image_benchmark.py \
 
 Переменные окружения: `YANDEX_OCR_INPUT_DIR`, `YANDEX_VISION_OUTPUT_DIR`, `YANDEX_OCR_MODEL`, `YANDEX_OCR_LANGUAGE_CODES`, `YANDEX_OCR_TIMEOUT_SEC`, `YANDEX_OCR_NORMALIZE`, `YANDEX_OCR_RECOGNIZE_URL`.
 
+**Локально одним вызовом** (читает ``.env`` в корне репозитория, по умолчанию ``input/data/1`` → ``output/yandex_vision``):
+
+```bash
+python scripts/run_yandex_vision_local_once.py
+python scripts/run_yandex_vision_local_once.py --model table --language-codes ru,en
+```
+
 ---
 
 ## task03 — сравнение эталона и текста (в т.ч. с внешнего OCR)

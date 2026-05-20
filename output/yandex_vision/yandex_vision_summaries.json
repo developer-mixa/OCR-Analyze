@@ -1,0 +1,38 @@
+{
+  "yandex_vision": {
+    "Model": "yandex_vision:page:lang=ru,en",
+    "Final Score": 56.66,
+    "Accuracy": 0.566591,
+    "CER": 0.433409,
+    "Unit Test Rate": null,
+    "Внутренний парсер": "yandex_vision_rest",
+    "Токены": {
+      "hypothesis_chars": 5718,
+      "hypothesis_words_approx": 806,
+      "note": "грубые счётчики по нормализованной гипотезе; токены биллинга — из usage API если есть"
+    },
+    "Доп. Комментарии": "yandex_vision_image_benchmark; n_files=4; n_with_cer=4; model=page; languages=['ru', 'en']",
+    "Скорость": {
+      "mean_elapsed_sec_per_file": 1.4577,
+      "total_elapsed_sec": 5.831,
+      "n_files_timed": 4
+    },
+    "_diagnostics": {
+      "normalize": "nfkc_ws",
+      "reference_chars": 5699,
+      "hypothesis_chars": 5718,
+      "WER": 0.584882
+    },
+    "_run_mode": {
+      "dry_run": false
+    },
+    "_outputs": {
+      "hypotheses_dir": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/yandex_vision/hypotheses/yandex_vision",
+      "jsonl": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/yandex_vision/yandex_vision_runs.jsonl",
+      "summaries_json": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/yandex_vision/yandex_vision_summaries.json",
+      "hypotheses_bundle_json": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/yandex_vision/yandex_vision_hypotheses_raw.json",
+      "hypotheses_concat_txt": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/yandex_vision/yandex_vision_hypotheses_concat.txt",
+      "n_bundled_files": 4
+    }
+  }
+}
