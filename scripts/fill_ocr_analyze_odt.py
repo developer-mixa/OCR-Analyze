@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Заполняет ocr-analyze.odt: сводные метрики MinerU, Paddle, GOT и таблица по файлам.
+Заполняет ocr-analyze.odt: сводные метрики MinerU, Paddle, GOT, Yandex Vision OCR и таблица по файлам.
 Источники: input/data/1/*.ref.txt, output/mineru/*.md, output/paddle/*.txt, output/got/*.txt
-(или hypotheses/got в output/got_benchmark), jsonl с elapsed в output/{mineru,paddle,got}/.
+(или hypotheses/got в output/got_benchmark), output/yandex_vision (или hypotheses/yandex_vision в
+output/yandex_vision_benchmark), jsonl с elapsed в output/{mineru,paddle,got,yandex_vision}/.
 """
 from __future__ import annotations
 
@@ -75,6 +76,27 @@ def load_got_hyp_raw(repo: Path, stem: str) -> str:
 
 def got_jsonl_path(repo: Path) -> Path | None:
     for p in (repo / "output" / "got" / "got_runs.jsonl", repo / "output" / "got_benchmark" / "got_runs.jsonl"):
+        if p.is_file():
+            return p
+    return None
+
+
+def load_yandex_hyp_raw(repo: Path, stem: str) -> str:
+    for p in (
+        repo / "output" / "yandex_vision" / f"{stem}.txt",
+        repo / "output" / "yandex_vision" / "hypotheses" / "yandex_vision" / f"{stem}.txt",
+        repo / "output" / "yandex_vision_benchmark" / "hypotheses" / "yandex_vision" / f"{stem}.txt",
+    ):
+        if p.is_file():
+            return p.read_text(encoding="utf-8", errors="replace")
+    return ""
+
+
+def yandex_jsonl_path(repo: Path) -> Path | None:
+    for p in (
+        repo / "output" / "yandex_vision" / "yandex_vision_runs.jsonl",
+        repo / "output" / "yandex_vision_benchmark" / "yandex_vision_runs.jsonl",
+    ):
         if p.is_file():
             return p
     return None
@@ -234,17 +256,51 @@ def main() -> int:
         )
         wer_g = float(row_g["_diagnostics"]["WER"])
 
+    refs_y: list[str] = []
+    hyps_y: list[str] = []
+    per_y: list[tuple[str, float | None, float | None]] = []
+    for stem in stems:
+        ref_raw = load_ref(stem)
+        hyp_raw = load_yandex_hyp_raw(repo, stem)
+        ref_n = normalize_text(ref_raw, norm)
+        hyp_n = normalize_text(hyp_raw, norm)
+        if ref_raw and hyp_raw.strip():
+            cer = char_error_rate(ref_n, hyp_n)
+            wer = float(jiwer.wer(ref_n, hyp_n))
+            refs_y.append(ref_n)
+            hyps_y.append(hyp_n)
+        else:
+            cer = wer = None
+        per_y.append((stem, cer, wer))
+
+    row_y: dict | None = None
+    wer_y: float | None = None
+    if refs_y and hyps_y:
+        row_y = build_metric_row(
+            ref_raw="\n".join(refs_y),
+            hyp_raw="\n".join(hyps_y),
+            normalize=norm,
+            model="yandex_vision:page",
+            internal_parser="yandex_vision_rest",
+            extra_comment="output/yandex_vision/*.txt",
+        )
+        wer_y = float(row_y["_diagnostics"]["WER"])
+
     mineru_times = load_jsonl_elapsed(repo / "output/mineru/mineru_runs.jsonl")
     paddle_times = load_jsonl_elapsed(repo / "output/paddle/paddle_runs.jsonl")
     got_jsonl = got_jsonl_path(repo)
     got_times = load_jsonl_elapsed(got_jsonl) if got_jsonl else {}
+    y_jsonl = yandex_jsonl_path(repo)
+    yandex_times = load_jsonl_elapsed(y_jsonl) if y_jsonl else {}
     mean_m = statistics.mean(mineru_times.values()) if mineru_times else None
     mean_p = statistics.mean(paddle_times.values()) if paddle_times else None
     mean_g = statistics.mean(got_times.values()) if got_times else None
+    mean_y = statistics.mean(yandex_times.values()) if yandex_times else None
 
     mineru_speed = f"{mean_m:.2f} с/файл" if mean_m is not None else "н/д (нет mineru_runs.jsonl)"
     paddle_speed = f"{mean_p:.2f} с/файл" if mean_p is not None else "н/д (нет paddle_runs.jsonl)"
     got_speed = f"{mean_g:.2f} с/файл" if mean_g is not None else "н/д (нет got_runs.jsonl)"
+    yandex_speed = f"{mean_y:.2f} с/файл" if mean_y is not None else "н/д (нет yandex_vision_runs.jsonl)"
 
     summary_headers = ["Model", "Final Score", "Accuracy", "CER", "WER", "Avg speed"]
     summary_rows = [
@@ -276,6 +332,17 @@ def main() -> int:
                 got_speed,
             ]
         )
+    if row_y is not None and wer_y is not None:
+        summary_rows.append(
+            [
+                "Yandex Vision OCR (REST)",
+                f"{row_y['Final Score']}",
+                f"{row_y['Accuracy']}",
+                f"{row_y['CER']}",
+                f"{round(wer_y, 6)}",
+                yandex_speed,
+            ]
+        )
 
     per_headers = [
         "Файл",
@@ -288,18 +355,24 @@ def main() -> int:
         "GOT CER",
         "GOT WER",
         "GOT,с",
+        "Yandex CER",
+        "YD WER",
+        "YD,с",
         "Лучший CER",
     ]
     per_rows: list[list[str]] = []
-    for (sm, cm, wm), (sp, cp, wp), (sg, cg, wg) in zip(per_m, per_p, per_g, strict=True):
-        assert sm == sp == sg
+    for (sm, cm, wm), (sp, cp, wp), (sg, cg, wg), (sy, cy, wy) in zip(per_m, per_p, per_g, per_y, strict=True):
+        assert sm == sp == sg == sy
         img = f"{sm}.png"
         tm = mineru_times.get(sm)
         tp = paddle_times.get(sm)
         tg = got_times.get(sm)
+        ty = yandex_times.get(sm)
         parts_cer: list[tuple[str, float]] = [("MinerU", cm), ("Paddle", cp)]
         if cg is not None:
             parts_cer.append(("GOT", cg))
+        if cy is not None:
+            parts_cer.append(("Yandex", cy))
         winner = best_by_cer(parts_cer)
         per_rows.append(
             [
@@ -313,6 +386,9 @@ def main() -> int:
                 f"{cg:.6f}" if cg is not None else "—",
                 f"{wg:.6f}" if wg is not None else "—",
                 f"{tg:.4f}" if tg is not None else "—",
+                f"{cy:.6f}" if cy is not None else "—",
+                f"{wy:.6f}" if wy is not None else "—",
+                f"{ty:.4f}" if ty is not None else "—",
                 winner,
             ]
         )
@@ -324,8 +400,11 @@ def main() -> int:
         "Методика: эталоны input/data/1 (*.ref.txt), нормализация nfkc_ws, CER/WER как в "
         "scripts/responses_api_analyze/metrics.py (агрегат — склейка нормализованных фрагментов "
         "и повторный nfkc_ws на склейке). Гипотезы: MinerU — output/mineru/*.md, Paddle — "
-        "output/paddle/*.txt, GOT — output/got/*.txt (или output/got_benchmark/hypotheses/got/). "
-        "Время — elapsed_sec в mineru_runs.jsonl, paddle_runs.jsonl, got_runs.jsonl. "
+        "output/paddle/*.txt, GOT — output/got/*.txt (или output/got_benchmark/hypotheses/got/), "
+        "Yandex Vision — output/yandex_vision/*.txt или hypotheses/yandex_vision в "
+        "output/yandex_vision|yandex_vision_benchmark. "
+        "Время — elapsed_sec в mineru_runs.jsonl, paddle_runs.jsonl, got_runs.jsonl, "
+        "yandex_vision_runs.jsonl. "
         "Столбец «Лучший CER» — минимум CER среди доступных движков на файле. "
         "CER по jiwer может быть >1."
     )

@@ -113,7 +113,7 @@ python scripts/draft_reference_from_local_ocr.py --input-dir "input/data/1" --te
 
 ## MinerU — изображения vs эталон (CLI, в т.ч. Google Colab)
 
-**Зависимости:** `pip install jiwer` + установка [MinerU](https://opendatalab.github.io/MinerU/) (в т.ч. `mineru` в PATH). Метрики те же поля, что в `responses_api_analyze/metrics.py` (CER, Final Score, …). Colab: ноутбук **`notes/mineru_colab.ipynb`** — шесть кодовых ячеек **0–5** по порядку, без ручного ввода команд в терминал (настройки — переменные Python в ячейках). **GOT-OCR2:** быстрый Colab — **`notes/got_colab.ipynb`**; развёрнутый ноутбук — **`notes/statisctics.ipynb`**.
+**Зависимости:** `pip install jiwer` + установка [MinerU](https://opendatalab.github.io/MinerU/) (в т.ч. `mineru` в PATH). Метрики те же поля, что в `responses_api_analyze/metrics.py` (CER, Final Score, …). Colab: ноутбук **`notes/mineru_colab.ipynb`** — шесть кодовых ячеек **0–5** по порядку, без ручного ввода команд в терминал (настройки — переменные Python в ячейках). **GOT-OCR2:** быстрый Colab — **`notes/got_colab.ipynb`**; **Yandex Vision OCR** — **`notes/yandex_vision_colab.ipynb`**; развёрнутый ноутбук — **`notes/statisctics.ipynb`**.
 
 Эталоны рядом с PNG: `stem.ref.txt`, `stem.ref.md`, … Скрипт вызывает `mineru -p <файл> -o <workdir> -b <backend>`, забирает сгенерированный `*.md`, пишет `output/.../hypotheses/mineru/<stem>.md`, JSONL и `mineru_summaries.json`. Сырой текст всех успешных прогонов дублируется в **`mineru_hypotheses_raw.json`** и **`mineru_hypotheses_concat.txt`** (удобно скачать из Colab); абсолютные пути — в **`mineru_summaries.json` → `mineru._outputs`**. Пример заполнения сводной таблицы по полям метрик: **`docs/mineru_benchmark_table_snapshot.md`**.
 
@@ -154,7 +154,7 @@ python scripts/mineru_image_benchmark.py \
 
 ## PaddleOCR — изображения vs эталон (Python API, в т.ч. Google Colab)
 
-**Зависимости:** `pip install jiwer paddlepaddle paddleocr` (GPU: `paddlepaddle-gpu`, см. [установку Paddle](https://www.paddlepaddle.org.cn/install/quick)). Метрики те же, что у MinerU (`responses_api_analyze/metrics.py`). Colab: **`notes/paddle_colab.ipynb`** — шесть ячеек **0–5** по порядку. **GOT-OCR2:** **`notes/got_colab.ipynb`** (ячейки **0–4**).
+**Зависимости:** `pip install jiwer paddlepaddle paddleocr` (GPU: `paddlepaddle-gpu`, см. [установку Paddle](https://www.paddlepaddle.org.cn/install/quick)). Метрики те же, что у MinerU (`responses_api_analyze/metrics.py`). Colab: **`notes/paddle_colab.ipynb`** — шесть ячеек **0–5** по порядку. **GOT-OCR2:** **`notes/got_colab.ipynb`** (ячейки **0–4**). **Yandex Vision OCR:** **`notes/yandex_vision_colab.ipynb`** (ячейки **0–4**).
 
 Эталоны рядом с PNG — как у MinerU. Скрипт пишет `output/.../hypotheses/paddle/<stem>.txt`, `paddle_runs.jsonl`, `paddle_summaries.json` (ключ **`paddleocr`**), при успехе — **`paddle_hypotheses_raw.json`**, **`paddle_hypotheses_concat.txt`**, пути в **`paddleocr._outputs`**. В **PaddleOCR 3.x** для русского задавайте **`--lang ru`** и **`--ocr-version PP-OCRv5`** (в таблице PP-OCRv5 нет кода `cyrillic`; в скрипте алиас `cyrillic`→`ru`). В Colab нужен актуальный клон с `scripts/paddle_image_benchmark.py` (ячейка 1 — `git pull`; при старом shallow clone иногда проще удалить каталог клона). Если `import paddleocr` ругается на `langchain_text_splitters`: `pip install langchain-text-splitters`.
 
@@ -180,9 +180,9 @@ python scripts/paddle_image_benchmark.py \
 
 ---
 
-## fill_ocr_analyze_odt — отчёт `ocr-analyze.odt` (MinerU + Paddle + GOT)
+## fill_ocr_analyze_odt — отчёт `ocr-analyze.odt` (MinerU + Paddle + GOT + Yandex Vision)
 
-**Зависимости:** `pip install jiwer` (как у бенчмарков). Скрипт пересчитывает метрики из репозитория и перезаписывает **`ocr-analyze.odt`** в корне: сводная таблица (MinerU по `output/mineru/*.md`, Paddle по `output/paddle/*.txt`, GOT по `output/got/*.txt` или `output/got_benchmark/hypotheses/got/*.txt`) и таблица **по каждому PNG** (CER/WER и время из соответствующих `*_runs.jsonl`, столбец **«Лучший CER»** среди трёх движков).
+**Зависимости:** `pip install jiwer` (как у бенчмарков). Скрипт пересчитывает метрики из репозитория и перезаписывает **`ocr-analyze.odt`** в корне: сводная таблица (MinerU по `output/mineru/*.md`, Paddle по `output/paddle/*.txt`, GOT по `output/got/*.txt` или `output/got_benchmark/hypotheses/got/*.txt`, Yandex Vision по `output/yandex_vision/*.txt` или `hypotheses/yandex_vision` в `output/yandex_vision` / `output/yandex_vision_benchmark`) и таблица **по каждому PNG** (CER/WER и время из соответствующих `*_runs.jsonl`, столбец **«Лучший CER»** среди доступных движков).
 
 ```bash
 python scripts/fill_ocr_analyze_odt.py
@@ -215,6 +215,50 @@ python scripts/got_image_benchmark.py \
 ```
 
 Переменные окружения: `GOT_INPUT_DIR`, `GOT_OUTPUT_DIR`, `GOT_MODEL_ID` (по умолчанию `ucaslcl/GOT-OCR2_0`), `GOT_OCR_TYPE` (`ocr` / `format`), `GOT_NORMALIZE`.
+
+---
+
+## Yandex Vision OCR — изображения vs эталон (REST, в т.ч. Colab)
+
+**Зависимости:** `pip install jiwer` (HTTP — стандартный `urllib`). Метрики те же, что у MinerU/Paddle (`responses_api_analyze/metrics.py`). Colab: **`notes/yandex_vision_colab.ipynb`** — ячейки **0–4** по порядку.
+
+**Документация:** [Vision OCR — концепции](https://aistudio.yandex.ru/docs/ru/vision/concepts/ocr/), [быстрый старт (Python)](https://aistudio.yandex.ru/docs/ru/vision/quickstart.html?tabs=programming_language_python). Синхронный метод **`recognizeText`**: по умолчанию `https://ocr.api.cloud.yandex.net/ocr/v1/recognizeText` (переменная `YANDEX_OCR_RECOGNIZE_URL`). Это **не** LLM-эндпоинт `YANDEX_GPT_BASE_URL` из AI Studio.
+
+**Аутентификация:** IAM — `YANDEX_OCR_IAM_TOKEN` или `YC_IAM_TOKEN`, заголовок `Authorization: Bearer …`, каталог `YANDEX_OCR_FOLDER_ID` или `YANDEX_GPT_FOLDER_ID` в `x-folder-id`. Либо API-ключ: `YANDEX_OCR_API_KEY` или **`YANDEX_GPT_API_KEY`**, заголовок `Authorization: Api-Key …` (см. [аутентификация Vision OCR](https://aistudio.yandex.ru/docs/ru/vision/api-ref/authentication)).
+
+Эталоны рядом с PNG — как у MinerU. Скрипт пишет `output/yandex_vision/hypotheses/yandex_vision/<stem>.txt`, `yandex_vision_runs.jsonl`, `yandex_vision_summaries.json` (ключ **`yandex_vision`**), при успехе — **`yandex_vision_hypotheses_raw.json`**, **`yandex_vision_hypotheses_concat.txt`**.
+
+```bash
+pip install jiwer
+export YANDEX_GPT_FOLDER_ID=b1g...
+export YANDEX_GPT_API_KEY=AQVN...
+python scripts/yandex_vision_image_benchmark.py \
+  --input-dir "input/data/1" \
+  --output-dir "output/yandex_vision" \
+  --model page \
+  --language-codes "ru,en"
+```
+
+Табличные сканы (по документации для `table` укажите языки `ru`/`en`, не `*`):
+
+```bash
+python scripts/yandex_vision_image_benchmark.py \
+  --input-dir "input/data/1" \
+  --output-dir "output/yandex_vision" \
+  --model table \
+  --language-codes "ru,en"
+```
+
+Пересчёт метрик по уже сохранённым `.txt` (без вызова API):
+
+```bash
+python scripts/yandex_vision_image_benchmark.py \
+  --input-dir "input/data/1" \
+  --output-dir "output/yandex_vision" \
+  --dry-run
+```
+
+Переменные окружения: `YANDEX_OCR_INPUT_DIR`, `YANDEX_VISION_OUTPUT_DIR`, `YANDEX_OCR_MODEL`, `YANDEX_OCR_LANGUAGE_CODES`, `YANDEX_OCR_TIMEOUT_SEC`, `YANDEX_OCR_NORMALIZE`, `YANDEX_OCR_RECOGNIZE_URL`.
 
 ---
 
