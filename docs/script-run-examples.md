@@ -113,7 +113,7 @@ python scripts/draft_reference_from_local_ocr.py --input-dir "input/data/1" --te
 
 ## MinerU — изображения vs эталон (CLI, в т.ч. Google Colab)
 
-**Зависимости:** `pip install jiwer` + установка [MinerU](https://opendatalab.github.io/MinerU/) (в т.ч. `mineru` в PATH). Метрики те же поля, что в `responses_api_analyze/metrics.py` (CER, Final Score, …). Colab: ноутбук **`notes/mineru_colab.ipynb`** — шесть кодовых ячеек **0–5** по порядку, без ручного ввода команд в терминал (настройки — переменные Python в ячейках). **GOT-OCR2:** быстрый Colab — **`notes/got_colab.ipynb`**; **Yandex Vision OCR** — **`notes/yandex_vision_colab.ipynb`**; развёрнутый ноутбук — **`notes/statisctics.ipynb`**.
+**Зависимости:** `pip install jiwer` + установка [MinerU](https://opendatalab.github.io/MinerU/) (в т.ч. `mineru` в PATH). Метрики те же поля, что в `responses_api_analyze/metrics.py` (CER, Final Score, …). **Сводка устройства MinerU в этом репо** (куда пишутся файлы, CLI, ODT): **`docs/mineru-in-this-repo.md`**. Colab: ноутбук **`notes/mineru_colab.ipynb`** — шесть кодовых ячеек **0–5** по порядку, без ручного ввода команд в терминал (настройки — переменные Python в ячейках). **GOT-OCR2:** быстрый Colab — **`notes/got_colab.ipynb`**; **Yandex Vision OCR** — **`notes/yandex_vision_colab.ipynb`**; развёрнутый ноутбук — **`notes/statisctics.ipynb`**.
 
 Эталоны рядом с PNG: `stem.ref.txt`, `stem.ref.md`, … Скрипт вызывает `mineru -p <файл> -o <workdir> -b <backend>`, забирает сгенерированный `*.md`, пишет `output/.../hypotheses/mineru/<stem>.md`, JSONL и `mineru_summaries.json`. Сырой текст всех успешных прогонов дублируется в **`mineru_hypotheses_raw.json`** и **`mineru_hypotheses_concat.txt`** (удобно скачать из Colab); абсолютные пути — в **`mineru_summaries.json` → `mineru._outputs`**. Пример заполнения сводной таблицы по полям метрик: **`docs/mineru_benchmark_table_snapshot.md`**.
 
@@ -180,6 +180,24 @@ python scripts/paddle_image_benchmark.py \
 
 ---
 
+## recalculate_summaries_from_outputs — Final Score по сохранённым гипотезам (без OCR)
+
+**Зависимости:** `pip install jiwer` (как у `metrics.build_metric_row`). Пересчитывает **`Final Score`**, Accuracy, CER и `_diagnostics` по уже лежащим в `output/` файлам (`mineru/*.md`, `paddle/*.txt`, `got/*.txt` или `got_benchmark`, `yandex_vision`) и перезаписывает `*_summaries.json` в тех же каталогах. Поля **«Скорость»** и **`_run_mode`** подтягиваются из прежнего JSON, если были.
+
+Только сводки:
+
+```bash
+python scripts/recalculate_summaries_from_outputs.py
+```
+
+Сводки и сразу отчёт **`ocr-analyze.odt`** (через `fill_ocr_analyze_odt.py`):
+
+```bash
+python scripts/recalculate_summaries_from_outputs.py --fill-odt
+```
+
+---
+
 ## fill_ocr_analyze_odt — отчёт `ocr-analyze.odt` (MinerU + Paddle + GOT + Yandex Vision)
 
 **Зависимости:** `pip install jiwer` (как у бенчмарков). Скрипт пересчитывает метрики из репозитория и перезаписывает **`ocr-analyze.odt`** в корне: сводная таблица (MinerU по `output/mineru/*.md`, Paddle по `output/paddle/*.txt`, GOT по `output/got/*.txt` или `output/got_benchmark/hypotheses/got/*.txt`, Yandex Vision по `output/yandex_vision/*.txt` или `hypotheses/yandex_vision` в `output/yandex_vision` / `output/yandex_vision_benchmark`) и таблица **по каждому PNG** (CER/WER и время из соответствующих `*_runs.jsonl`, столбец **«Лучший CER»** среди доступных движков).
@@ -188,7 +206,7 @@ python scripts/paddle_image_benchmark.py \
 python scripts/fill_ocr_analyze_odt.py
 ```
 
-Запускать из корня репозитория. После обновления эталонов или гипотез перезапустите скрипт, чтобы обновить ODT.
+Запускать из корня репозитория. После обновления эталонов или гипотез перезапустите скрипт, чтобы обновить ODT. Если сводки уже актуальны, достаточно `fill_ocr_analyze_odt.py`; если нужно сначала выровнять `*_summaries.json` под текущие гипотезы — см. **`recalculate_summaries_from_outputs`** выше.
 
 ---
 
@@ -266,6 +284,16 @@ python scripts/yandex_vision_image_benchmark.py \
 python scripts/run_yandex_vision_local_once.py
 python scripts/run_yandex_vision_local_once.py --model table --language-codes ru,en
 ```
+
+---
+
+## Составной **Final Score** (`metrics.build_metric_row`)
+
+Итоговый балл **0..100** — **сумма** только по качеству и объёму текста (время **не** входит; среднее время при желании кладётся в `_diagnostics.benchmark_mean_elapsed_sec`):
+
+**40**×(1−min(CER,1)) + **35**×(1−min(WER,1)) + **12.5**×(1−min(Δchars,1)) + **12.5**×(1−min(Δwords,1)), где Δ — относительное расхождение длин нормализованного ref/hyp по символам и по числу слов.
+
+Разложение: `_diagnostics.final_score_parts`.
 
 ---
 
@@ -392,6 +420,6 @@ python scripts/responses_api_analyze/run_ocr_api_benchmark.py
 | `run_ocr_api_benchmark` | поле `Model` в `api_ocr_summaries.json` | CER / Accuracy (как task03) | `elapsed_sec` в JSONL | usage при наличии | гипотезы в `hypotheses/<provider>/` |
 | task01 | через `--lang` / конфиг в JSON (`tesseract_config`) | нет эталона | `elapsed_sec` в JSONL | нет | прокси таблиц, conf Tesseract |
 | task02 | `lang=docling`, пометка в `tesseract_config` | нет эталона | `elapsed_sec` | нет | confidence Docling ≠ слова |
-| task03 | `--model` | CER, Accuracy в JSON | нет | грубые chars/words | Final Score = 100×(1−CER) по умолчанию |
+| task03 | `--model` | CER, Accuracy в JSON | нет | грубые chars/words | **Final Score** — сумма частей (CER, WER, длины), см. `metrics.composite_final_score` |
 
 При добавлении нового скрипта в `scripts/` **дописывайте сюда секцию** с зависимостями и 1–3 примерами `bash`.

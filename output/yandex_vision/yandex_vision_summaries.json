@@ -1,7 +1,7 @@
 {
   "yandex_vision": {
-    "Model": "yandex_vision:page:lang=ru,en",
-    "Final Score": 56.66,
+    "Model": "yandex_vision:page",
+    "Final Score": 62.14,
     "Accuracy": 0.566591,
     "CER": 0.433409,
     "Unit Test Rate": null,
@@ -11,7 +11,7 @@
       "hypothesis_words_approx": 806,
       "note": "грубые счётчики по нормализованной гипотезе; токены биллинга — из usage API если есть"
     },
-    "Доп. Комментарии": "yandex_vision_image_benchmark; n_files=4; n_with_cer=4; model=page; languages=['ru', 'en']",
+    "Доп. Комментарии": "output/yandex_vision (recalculate_summaries_from_outputs)",
     "Скорость": {
       "mean_elapsed_sec_per_file": 1.4577,
       "total_elapsed_sec": 5.831,
@@ -21,7 +21,18 @@
       "normalize": "nfkc_ws",
       "reference_chars": 5699,
       "hypothesis_chars": 5718,
-      "WER": 0.584882
+      "reference_words_approx": 807,
+      "WER": 0.584882,
+      "word_accuracy_1_minus_wer_clamped": 0.415118,
+      "word_accuracy_1_minus_wer": 0.415118,
+      "final_score_parts": {
+        "from_cer": 22.6636,
+        "from_wer": 14.5291,
+        "from_char_len_ratio": 12.4583,
+        "from_word_len_ratio": 12.4845,
+        "weights": "cer=40, wer=35, Δchars=12.5, Δwords=12.5; время в балл не входит"
+      },
+      "benchmark_mean_elapsed_sec": 1.4577
     },
     "_run_mode": {
       "dry_run": false
@@ -31,8 +42,7 @@
       "jsonl": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/yandex_vision/yandex_vision_runs.jsonl",
       "summaries_json": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/yandex_vision/yandex_vision_summaries.json",
       "hypotheses_bundle_json": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/yandex_vision/yandex_vision_hypotheses_raw.json",
-      "hypotheses_concat_txt": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/yandex_vision/yandex_vision_hypotheses_concat.txt",
-      "n_bundled_files": 4
+      "hypotheses_concat_txt": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/yandex_vision/yandex_vision_hypotheses_concat.txt"
     }
   }
 }

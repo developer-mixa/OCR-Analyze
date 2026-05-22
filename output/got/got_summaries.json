@@ -1,38 +1,48 @@
 {
-    "got_ocr2": {
-      "Model": "got:ucaslcl/GOT-OCR2_0|ocr_type=ocr",
-      "Final Score": 51.92,
-      "Accuracy": 0.519214,
-      "CER": 0.480786,
-      "Unit Test Rate": null,
-      "Внутренний парсер": "got_ocr2",
-      "Токены": {
-        "hypothesis_chars": 6731,
-        "hypothesis_words_approx": 1337,
-        "note": "грубые счётчики по нормализованной гипотезе; токены биллинга — из usage API если есть"
+  "got_ocr2": {
+    "Model": "got:ucaslcl/GOT-OCR2_0|ocr_type=ocr",
+    "Final Score": 35.3,
+    "Accuracy": 0.519214,
+    "CER": 0.480786,
+    "Unit Test Rate": null,
+    "Внутренний парсер": "got_ocr2",
+    "Токены": {
+      "hypothesis_chars": 6731,
+      "hypothesis_words_approx": 1337,
+      "note": "грубые счётчики по нормализованной гипотезе; токены биллинга — из usage API если есть"
+    },
+    "Доп. Комментарии": "output/got/*.txt (recalculate_summaries_from_outputs)",
+    "Скорость": {
+      "mean_elapsed_sec_per_file": 41.8976,
+      "total_elapsed_sec": 167.591,
+      "n_files_timed": 4
+    },
+    "_diagnostics": {
+      "normalize": "nfkc_ws",
+      "reference_chars": 5699,
+      "hypothesis_chars": 6731,
+      "reference_words_approx": 807,
+      "WER": 1.122677,
+      "word_accuracy_1_minus_wer_clamped": 0.0,
+      "word_accuracy_1_minus_wer": 0.0,
+      "final_score_parts": {
+        "from_cer": 20.7686,
+        "from_wer": 0.0,
+        "from_char_len_ratio": 10.2364,
+        "from_word_len_ratio": 4.2906,
+        "weights": "cer=40, wer=35, Δchars=12.5, Δwords=12.5; время в балл не входит"
       },
-      "Доп. Комментарии": "got_image_benchmark; n_files=4; n_with_cer=4; model_id=ucaslcl/GOT-OCR2_0; ocr_type=ocr",
-      "Скорость": {
-        "mean_elapsed_sec_per_file": 41.8976,
-        "total_elapsed_sec": 167.591,
-        "n_files_timed": 4
-      },
-      "_diagnostics": {
-        "normalize": "nfkc_ws",
-        "reference_chars": 5699,
-        "hypothesis_chars": 6731,
-        "WER": 1.122677
-      },
-      "_run_mode": {
-        "dry_run": false
-      },
-      "_outputs": {
-        "hypotheses_dir": "/content/OCR-Analyze/output/got_benchmark/hypotheses/got",
-        "jsonl": "/content/OCR-Analyze/output/got_benchmark/got_runs.jsonl",
-        "summaries_json": "/content/OCR-Analyze/output/got_benchmark/got_summaries.json",
-        "hypotheses_bundle_json": "/content/OCR-Analyze/output/got_benchmark/got_hypotheses_raw.json",
-        "hypotheses_concat_txt": "/content/OCR-Analyze/output/got_benchmark/got_hypotheses_concat.txt",
-        "n_bundled_files": 4
-      }
+      "benchmark_mean_elapsed_sec": 41.8976
+    },
+    "_run_mode": {
+      "dry_run": false
+    },
+    "_outputs": {
+      "hypotheses_dir": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/got",
+      "jsonl": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/got/got_runs.jsonl",
+      "summaries_json": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/got/got_summaries.json",
+      "hypotheses_bundle_json": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/got/got_hypotheses_raw.json",
+      "hypotheses_concat_txt": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/got/got_hypotheses_concat.txt"
     }
   }
+}

@@ -41,6 +41,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import statistics
 from pathlib import Path
 
 from metrics import build_metric_row, char_error_rate, normalize_text
@@ -299,6 +300,7 @@ def main() -> int:
         return 0
 
     corpus: dict[str, tuple[list[str], list[str]]] = {p: ([], []) for p in providers}
+    elapsed_per_prov: dict[str, list[float]] = {p: [] for p in providers}
 
     with jsonl_path.open("w", encoding="utf-8") as jf:
         for img in images:
@@ -329,6 +331,8 @@ def main() -> int:
                     row["char_accuracy"] = round(max(0.0, min(1.0, 1.0 - cer)), 6)
                     corpus[prov][0].append(ref_n)
                     corpus[prov][1].append(normalize_text(text, normalize))
+                if err is None and sec is not None:
+                    elapsed_per_prov[prov].append(float(sec))
                 jf.write(json.dumps(row, ensure_ascii=False) + "\n")
 
     summaries: dict[str, dict] = {}
@@ -350,6 +354,7 @@ def main() -> int:
             }
             continue
         hyp_concat = "\n".join(hyps)
+        mean_e = statistics.mean(elapsed_per_prov[prov]) if elapsed_per_prov[prov] else None
         row = build_metric_row(
             ref_raw="\n".join(refs),
             hyp_raw=hyp_concat,
@@ -357,10 +362,17 @@ def main() -> int:
             model=label,
             internal_parser=internal_parser,
             extra_comment=comment,
+            mean_elapsed_sec=mean_e,
         )
-        row["Скорость"] = {
-            "note": "среднее по файлам см. в JSONL elapsed_sec",
-        }
+        if mean_e is not None:
+            row["Скорость"] = {
+                "mean_elapsed_sec_per_file": round(mean_e, 4),
+                "n_files_timed": len(elapsed_per_prov[prov]),
+            }
+        else:
+            row["Скорость"] = {
+                "note": "нет успешных elapsed_sec в JSONL для провайдера",
+            }
         summaries[prov] = row
 
     (out_root / "api_ocr_summaries.json").write_text(

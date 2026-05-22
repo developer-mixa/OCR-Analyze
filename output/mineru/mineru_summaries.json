@@ -1,38 +1,48 @@
 {
-    "mineru": {
-      "Model": "mineru_cli:pipeline",
-      "Final Score": 59.84,
-      "Accuracy": 0.598351,
-      "CER": 0.401649,
-      "Unit Test Rate": null,
-      "Внутренний парсер": "mineru",
-      "Токены": {
-        "hypothesis_chars": 7015,
-        "hypothesis_words_approx": 744,
-        "note": "грубые счётчики по нормализованной гипотезе; токены биллинга — из usage API если есть"
+  "mineru": {
+    "Model": "mineru_cli:pipeline",
+    "Final Score": 64.24,
+    "Accuracy": 0.598351,
+    "CER": 0.401649,
+    "Unit Test Rate": null,
+    "Внутренний парсер": "mineru",
+    "Токены": {
+      "hypothesis_chars": 7015,
+      "hypothesis_words_approx": 744,
+      "note": "грубые счётчики по нормализованной гипотезе; токены биллинга — из usage API если есть"
+    },
+    "Доп. Комментарии": "output/mineru/*.md (recalculate_summaries_from_outputs)",
+    "Скорость": {
+      "mean_elapsed_sec_per_file": 46.0709,
+      "total_elapsed_sec": 184.284,
+      "n_files_timed": 4
+    },
+    "_diagnostics": {
+      "normalize": "nfkc_ws",
+      "reference_chars": 5699,
+      "hypothesis_chars": 7015,
+      "reference_words_approx": 807,
+      "WER": 0.452292,
+      "word_accuracy_1_minus_wer_clamped": 0.547708,
+      "word_accuracy_1_minus_wer": 0.547708,
+      "final_score_parts": {
+        "from_cer": 23.934,
+        "from_wer": 19.1698,
+        "from_char_len_ratio": 9.6135,
+        "from_word_len_ratio": 11.5242,
+        "weights": "cer=40, wer=35, Δchars=12.5, Δwords=12.5; время в балл не входит"
       },
-      "Доп. Комментарии": "mineru_image_benchmark; n_files=4; n_with_cer=4; backend=pipeline",
-      "Скорость": {
-        "mean_elapsed_sec_per_file": 46.0709,
-        "total_elapsed_sec": 184.284,
-        "n_files_timed": 4
-      },
-      "_diagnostics": {
-        "normalize": "nfkc_ws",
-        "reference_chars": 5699,
-        "hypothesis_chars": 7015,
-        "WER": 0.452292
-      },
-      "_run_mode": {
-        "dry_run": false
-      },
-      "_outputs": {
-        "hypotheses_dir": "/content/OCR-Analyze/output/mineru_benchmark/hypotheses/mineru",
-        "jsonl": "/content/OCR-Analyze/output/mineru_benchmark/mineru_runs.jsonl",
-        "summaries_json": "/content/OCR-Analyze/output/mineru_benchmark/mineru_summaries.json",
-        "hypotheses_bundle_json": "/content/OCR-Analyze/output/mineru_benchmark/mineru_hypotheses_raw.json",
-        "hypotheses_concat_txt": "/content/OCR-Analyze/output/mineru_benchmark/mineru_hypotheses_concat.txt",
-        "n_bundled_files": 4
-      }
+      "benchmark_mean_elapsed_sec": 46.0709
+    },
+    "_run_mode": {
+      "dry_run": false
+    },
+    "_outputs": {
+      "hypotheses_dir": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/mineru",
+      "jsonl": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/mineru/mineru_runs.jsonl",
+      "summaries_json": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/mineru/mineru_summaries.json",
+      "hypotheses_bundle_json": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/mineru/mineru_hypotheses_raw.json",
+      "hypotheses_concat_txt": "/home/mixail/Рабочий стол/job/OCR-Analyze/output/mineru/mineru_hypotheses_concat.txt"
     }
   }
+}

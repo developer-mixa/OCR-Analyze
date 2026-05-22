@@ -429,6 +429,7 @@ def main() -> int:
             model=model_label,
             internal_parser="paddleocr",
             extra_comment=comment,
+            mean_elapsed_sec=statistics.mean(elapsed_ok) if elapsed_ok else None,
         )
         if elapsed_ok:
             summary["Скорость"] = {

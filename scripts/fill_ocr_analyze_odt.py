@@ -166,6 +166,17 @@ def main() -> int:
     norm = "nfkc_ws"
     stems = ["test1", "test2", "test3", "test4"]
 
+    mineru_times = load_jsonl_elapsed(repo / "output/mineru/mineru_runs.jsonl")
+    paddle_times = load_jsonl_elapsed(repo / "output/paddle/paddle_runs.jsonl")
+    got_jsonl = got_jsonl_path(repo)
+    got_times = load_jsonl_elapsed(got_jsonl) if got_jsonl else {}
+    y_jsonl = yandex_jsonl_path(repo)
+    yandex_times = load_jsonl_elapsed(y_jsonl) if y_jsonl else {}
+    mean_m = statistics.mean(mineru_times.values()) if mineru_times else None
+    mean_p = statistics.mean(paddle_times.values()) if paddle_times else None
+    mean_g = statistics.mean(got_times.values()) if got_times else None
+    mean_y = statistics.mean(yandex_times.values()) if yandex_times else None
+
     def load_ref(stem: str) -> str:
         for name in (f"{stem}.ref.txt", f"{stem}.ref.md", f"{stem}.txt", f"{stem}.md"):
             p = inp / name
@@ -198,6 +209,7 @@ def main() -> int:
         model="mineru_cli:pipeline",
         internal_parser="mineru",
         extra_comment="output/mineru/*.md",
+        mean_elapsed_sec=mean_m,
     )
     wer_m = row_m["_diagnostics"]["WER"]
 
@@ -223,6 +235,7 @@ def main() -> int:
         model="paddleocr:lang=ru:PP-OCRv5",
         internal_parser="paddleocr",
         extra_comment="output/paddle/*.txt",
+        mean_elapsed_sec=mean_p,
     )
     wer_p = row_p["_diagnostics"]["WER"]
 
@@ -253,6 +266,7 @@ def main() -> int:
             model="got:ucaslcl/GOT-OCR2_0|ocr_type=ocr",
             internal_parser="got_ocr2",
             extra_comment="output/got/*.txt",
+            mean_elapsed_sec=mean_g,
         )
         wer_g = float(row_g["_diagnostics"]["WER"])
 
@@ -283,19 +297,9 @@ def main() -> int:
             model="yandex_vision:page",
             internal_parser="yandex_vision_rest",
             extra_comment="output/yandex_vision/*.txt",
+            mean_elapsed_sec=mean_y,
         )
         wer_y = float(row_y["_diagnostics"]["WER"])
-
-    mineru_times = load_jsonl_elapsed(repo / "output/mineru/mineru_runs.jsonl")
-    paddle_times = load_jsonl_elapsed(repo / "output/paddle/paddle_runs.jsonl")
-    got_jsonl = got_jsonl_path(repo)
-    got_times = load_jsonl_elapsed(got_jsonl) if got_jsonl else {}
-    y_jsonl = yandex_jsonl_path(repo)
-    yandex_times = load_jsonl_elapsed(y_jsonl) if y_jsonl else {}
-    mean_m = statistics.mean(mineru_times.values()) if mineru_times else None
-    mean_p = statistics.mean(paddle_times.values()) if paddle_times else None
-    mean_g = statistics.mean(got_times.values()) if got_times else None
-    mean_y = statistics.mean(yandex_times.values()) if yandex_times else None
 
     mineru_speed = f"{mean_m:.2f} с/файл" if mean_m is not None else "н/д (нет mineru_runs.jsonl)"
     paddle_speed = f"{mean_p:.2f} с/файл" if mean_p is not None else "н/д (нет paddle_runs.jsonl)"
@@ -406,7 +410,9 @@ def main() -> int:
         "Время — elapsed_sec в mineru_runs.jsonl, paddle_runs.jsonl, got_runs.jsonl, "
         "yandex_vision_runs.jsonl. "
         "Столбец «Лучший CER» — минимум CER среди доступных движков на файле. "
-        "CER по jiwer может быть >1."
+        "CER по jiwer может быть >1. "
+        "**Final Score** в сводке — сумма до 100 баллов только по CER, WER и сходству длин текста (время не входит); детали в `_diagnostics.final_score_parts`. "
+        "При передаче среднего времени в `build_metric_row` оно дублируется в `_diagnostics.benchmark_mean_elapsed_sec` для справки."
     )
 
     odt = repo / "ocr-analyze.odt"

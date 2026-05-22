@@ -28,6 +28,44 @@ def char_error_rate(ref: str, hyp: str) -> float:
     return float(jiwer.cer(ref, hyp))
 
 
+def composite_final_score(
+    cer: float,
+    wer: float,
+    *,
+    ref_chars: int,
+    hyp_chars: int,
+    ref_words: int,
+    hyp_words: int,
+) -> tuple[float, dict[str, float | str]]:
+    """
+    Итоговый балл 0..100 как **сумма** частей (без учёта времени).
+
+    **40**×(1−min(CER,1)) + **35**×(1−min(WER,1))
+    + **12.5**×(1−min(rel_err_chars,1)) + **12.5**×(1−min(rel_err_words,1)),
+    где rel_err — относительное расхождение длин нормализованного ref и hyp.
+    """
+    den_c = max(ref_chars, 1)
+    rel_c = abs(ref_chars - hyp_chars) / float(den_c)
+    den_w = max(ref_words, 1)
+    rel_w = abs(ref_words - hyp_words) / float(den_w)
+
+    w_cer, w_wer, w_char, w_word = 40.0, 35.0, 12.5, 12.5
+
+    s_cer = w_cer * max(0.0, 1.0 - min(cer, 1.0))
+    s_wer = w_wer * max(0.0, 1.0 - min(wer, 1.0))
+    s_char = w_char * max(0.0, 1.0 - min(rel_c, 1.0))
+    s_word = w_word * max(0.0, 1.0 - min(rel_w, 1.0))
+    total = round(s_cer + s_wer + s_char + s_word, 2)
+    parts: dict[str, float | str] = {
+        "from_cer": round(s_cer, 4),
+        "from_wer": round(s_wer, 4),
+        "from_char_len_ratio": round(s_char, 4),
+        "from_word_len_ratio": round(s_word, 4),
+        "weights": "cer=40, wer=35, Δchars=12.5, Δwords=12.5; время в балл не входит",
+    }
+    return total, parts
+
+
 def build_metric_row(
     *,
     ref_raw: str,
@@ -36,6 +74,7 @@ def build_metric_row(
     model: str,
     internal_parser: str | None,
     extra_comment: str | None,
+    mean_elapsed_sec: float | None = None,
 ) -> dict:
     import jiwer
 
@@ -51,9 +90,32 @@ def build_metric_row(
         cer = float(jiwer.cer(ref, hyp))
         wer = float(jiwer.wer(ref, hyp))
     char_accuracy = max(0.0, min(1.0, 1.0 - cer))
+    ref_words = len(ref.split())
     hyp_words = len(hyp.split())
     hyp_chars = len(hyp)
-    final_score = round(100.0 * (1.0 - cer), 2)
+    ref_chars = len(ref)
+    word_accuracy = max(0.0, min(1.0, 1.0 - wer))
+
+    final_score, score_parts = composite_final_score(
+        cer,
+        wer,
+        ref_chars=ref_chars,
+        hyp_chars=hyp_chars,
+        ref_words=ref_words,
+        hyp_words=hyp_words,
+    )
+    diag: dict = {
+        "normalize": normalize,
+        "reference_chars": ref_chars,
+        "hypothesis_chars": hyp_chars,
+        "reference_words_approx": ref_words,
+        "WER": round(wer, 6),
+        "word_accuracy_1_minus_wer_clamped": round(max(0.0, min(1.0, 1.0 - min(wer, 1.0))), 6),
+        "word_accuracy_1_minus_wer": round(word_accuracy, 6),
+        "final_score_parts": score_parts,
+    }
+    if mean_elapsed_sec is not None:
+        diag["benchmark_mean_elapsed_sec"] = round(float(mean_elapsed_sec), 4)
     return {
         "Model": model,
         "Final Score": final_score,
@@ -68,10 +130,5 @@ def build_metric_row(
         },
         "Доп. Комментарии": extra_comment or "",
         "Скорость": None,
-        "_diagnostics": {
-            "normalize": normalize,
-            "reference_chars": len(ref),
-            "hypothesis_chars": len(hyp),
-            "WER": round(wer, 6),
-        },
+        "_diagnostics": diag,
     }
